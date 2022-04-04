@@ -47,33 +47,25 @@ Kernel APIs:
    order to implement this invisibly from the host side requires a
    complex mount namespace exercise.
 
-4. The ability to determine re-uses of devices, in particular block
-   devices, so that we can pinpoint a specific use of a device. Linux
-   aggressively recycles device names, in particular block device
-   names. i.e. a USB disk is almost certainly named `sda` when plugged
-   in (at lest if there's only one of them). If you unplug it and plug
-   in a different one, the device name in the kernel will be the same,
-   again `sda`, but we start talking to an entirely different device,
-   with with different features, properties and contents.
 
-   This is particularly bad for loopback block devices, which
-   applications frequently allocate and release, and which are always
-   allocated starting with `loop0`. In particular when working with
-   partitioned images it's important to be able to match up the udev
-   database entry for a device, the uevents coming from the kernel and
-   the actual device node one can open in a safe way, so that one
-   isn't mixing up data from an early use of such a device with a
-   later one.
+4. inotify() events for BSD file locks. BSD file locks
+   (i.e. `flock()`, as opposed to POSIX `F_SETLK` and friends are
+   inode-focussed, hence would be great if one could get asynchronous
+   notification when they are released via inotify.
 
-   **Use-Case:** `systemd-nspawn` has an `--image=` switch which
-   allows booting a container directly from a partitioned GPT disk
-   image. After attaching the image file to a loopback device, one has
-   to wait until the kernel's partition table parser picked up all
-   partitions to mount. It currently is racy for userspace to wait for
-   this, if the loopback devices are heavily recycled, since it's not
-   clear from which device use any uevents seen originate.
-
-   [Proposed patch set](https://lore.kernel.org/linux-block/20210315200242.67355-1-mcroce@linux.microsoft.com/)
+   **Use-Case:** udevd probes block devices whenever they pop up to
+   create /dev/disk/by-label/* and similar symlinks. Formatting tools
+   can temporarily block this behaviour by taking a BSD file lock on
+   the block device (as per https://systemd.io/BLOCK_DEVICE_LOCKING),
+   in order to make sure udevd doesn't probe file systems/partition
+   tables that are only partially initialized. Currently, udevd uses
+   inotify `IN_CLOSE_WRITE` notifications to detect whenever
+   applications close a block device after writing to it, and
+   automatically reprobes the device. This works reasonably OK given
+   that block devices are usually closed at the same time as their
+   BSD file lock is released, and vice versa. However, this is not
+   fully correct: what udevd actually should be watching is the locks
+   being released, not the devices being closed.
 
 5. `SCM_CGROUP` or a similar auxiliary socket message, that allows
    receivers to figure out which cgroup a sender is part of.
