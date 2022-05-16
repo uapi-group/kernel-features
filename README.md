@@ -357,3 +357,9 @@ Kernel APIs:
     whow attributes cannot be changed by the caller don't want
     `mount_settattr()` to fail on the first mount it failed to convert. Give
     them a flag to request changes ignoring failures.
+
+24. Add upgrade masks to `openat2()`. Extend `struct open_how` to allow
+    restrict re-opening of file descriptors.
+
+    **Use-Case:** block services or containers from re-opening/upgrading an
+    `O_PATH` file descriptor through e.g. `/proc/<pid>/fd/<nr` as `O_WRONLY`.
