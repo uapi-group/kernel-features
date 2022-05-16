@@ -383,5 +383,8 @@ Kernel APIs:
       we added that allows preventing device recycling issues when e.g.
       removing usb devices very quickly and is needed for udev.)
     * uuid/fsid
-    * feature flags (O_TMPFILE, RENAME_EXCHANGE supported etc.)
+    * feature flags (`O_TMPFILE`, `RENAME_EXCHANGE` supported etc.)
 
+    **Use-Case:** low-level userspace tools have to interact with advanced
+    mount information constantly. This is currently costly and brittel because
+    they have to go and parse `/proc/<pid>/mountinfo`.
