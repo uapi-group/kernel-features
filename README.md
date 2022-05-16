@@ -349,3 +349,11 @@ Kernel APIs:
     **Use-Case:** as mentioned above systemd-udev allows synchronizing
     block device probing via flock(). Often userspace wants to wait
     for that, but without risking to hang forever.
+
+23. Extend `mount_setattr()` to allow changing mount properties ignoring any
+    failures.
+
+    **Use-Case:** workloads that know that there are mounts in a mount tree
+    whow attributes cannot be changed by the caller don't want
+    `mount_settattr()` to fail on the first mount it failed to convert. Give
+    them a flag to request changes ignoring failures.
