@@ -388,3 +388,12 @@ Kernel APIs:
     **Use-Case:** low-level userspace tools have to interact with advanced
     mount information constantly. This is currently costly and brittel because
     they have to go and parse `/proc/<pid>/mountinfo`.
+
+26. Make quotas work with user namespaces. The quota codepaths in the kernel
+    currently broken and inconsistent and most interesting operations are
+    guarded behind `capable(CAP_SYS_ADMIN)`, i.e., require `CAP_SYS_ADMIN` in
+    the initial user namespace. We should rework these codepaths to work with
+    user namespaces and then see whether we can make them work with idmapped
+    mounts.
+
+    **Use-Case:** using quotas correctly in containers.
