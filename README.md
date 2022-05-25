@@ -451,3 +451,12 @@ Kernel APIs:
     **Use-Case:** Make it trivial to attach to all namespaces of a process
     without having to figure out whether the caller is already in the same
     namespace or not.
+
+31. (kAPI) Add security hook to `mount_setattr()`.
+
+    **Use-Case:** Allow LSMs to make decisions about what mount properties to
+    allow and what to deny.
+
+32. (kAPI) Add security hook to `create_user_ns()`.
+
+    **Use-Case:** Allow LSMs to monitor user namespace creation.
