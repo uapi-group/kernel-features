@@ -354,7 +354,7 @@ Kernel APIs:
     failures.
 
     **Use-Case:** workloads that know that there are mounts in a mount tree
-    whow attributes cannot be changed by the caller don't want
+    whose attributes cannot be changed by the caller don't want
     `mount_settattr()` to fail on the first mount it failed to convert. Give
     them a flag to request changes ignoring failures.
 
