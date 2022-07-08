@@ -495,8 +495,9 @@ Kernel APIs:
     simultaneously have access to the same directory tree.
 
 35. The io_uring subsystem is open to adding classic existing synchronous
-    system calls to io_uring. They also said they would support adding new
-    functionality into io_uring that is not exposed through system calls yet.
+    system calls (e.g. setns() or mount() or other) to io_uring. They also said
+    they would support adding new functionality into io_uring that is not
+    exposed through system calls yet.
 
 36. Explore the idea of mapping different uids/gids to the same uids/gids, i.e.
     65534:1000:1 50000:1000:1. This will only work if the mount is read-only as
