@@ -466,7 +466,7 @@ Kernel APIs:
     the processes themselves. It would be good if we had a per-cgroup
     knob instead, that is under control of the service manager.
 
-    **Use-Case:* coredumps can be heavy to generate. For different
+    **Use-Case:** coredumps can be heavy to generate. For different
     usecases it would be good to be able to opt-in or opt-out
     dynamically from coredumps for specific services, at runtime
     without restarting them.
