@@ -486,7 +486,8 @@ Kernel APIs:
     right. Hence, mkdirat_fd() that creates a directory *and* returns
     an O_DIRECTORY fd to it would be great. As would be mknodeat_fd()
     that creates a device node, FIFO or (dead) socket and returns an
-    O_PATH fd to it.
+    O_PATH fd to it. And of course symlinkat_fd() that creates a
+    symlink and returns an O_PATH fd to it.
 
     **Use-Case:** any program that creates/unpacks not just files, but
     directories, device nodes, fifos, and wants to ensure that they
