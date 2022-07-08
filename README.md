@@ -460,3 +460,35 @@ Kernel APIs:
 32. (kAPI) Add security hook to `create_user_ns()`.
 
     **Use-Case:** Allow LSMs to monitor user namespace creation.
+
+33. A per-cgroup knob for coredump sizes. Currently coredump size
+    control is strictly per process, and primarily under control of
+    the processes themselves. It would be good if we had a per-cgroup
+    knob instead, that is under control of the service manager.
+
+    **Use-Case:* coredumps can be heavy to generate. For different
+    usecases it would be good to be able to opt-in or opt-out
+    dynamically from coredumps for specific services, at runtime
+    without restarting them.
+
+34. A way to race-freely create an (non-file) inode and immediately
+    open it. For regular files we have open(O_CREAT) for creating a
+    new file inode, and returning a pinning fd to it. This is missing
+    for other inode types, such as directories, device nodes,
+    FIFOs. The lack of such functionality means that when populating a
+    directory tree there's always a race involved: the inodes first
+    need to be created, and then opened to adjust their
+    permissions/ownership/labels/timestamps/acls/xattrs/…, but in the
+    time window between the creation and the opening they might be
+    replaced by something else. Addressing this race without proper
+    APIs is possible (by immediately fstat()ing what was opened, to
+    verify that it has the right inode type), but difficult to get
+    right. Hence, mkdirat_fd() that creates a directory *and* returns
+    an O_DIRECTORY fd to it would be great. As would be mknodeat_fd()
+    that creates a device node, FIFO or (dead) socket and returns an
+    O_PATH fd to it.
+
+    **Use-Case:** any program that creates/unpacks not just files, but
+    directories, device nodes, fifos, and wants to ensure that they
+    safely get the right attributes applied, even if other code might
+    simultaneously have access to the same directory tree.
