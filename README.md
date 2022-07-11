@@ -522,3 +522,8 @@ Kernel APIs:
     system image attacks. The OS and its payloads (apps, containers,
     …) could then be composed from these resources, through means like
     overlayfs, namespacing and more.
+
+38. Namespace-able loop and block devices, usable inside user namespaces.
+
+    **Use-Case:** Allow mounting images inside nspawn containers, and using
+    RootImage= and friends in the systemd user manager.
