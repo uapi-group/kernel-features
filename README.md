@@ -1,24 +1,5 @@
 # Kernel Features 🤞 🎁 🙏
 
-1. Per-user-namespace `overflowuid`.
-
-   **Use-case #1**: Desktop integration for removable storage with
-   file systems such as `ext4`: when a USB stick is inserted into a
-   desktop with a session of a user "lennart", then this should have
-   the effect that all files on the USB stick are owned by "lennart",
-   regardless of what ownership is recorded in the file system. This
-   currently works well for `vfat`, but does not work for `ext4`,
-   `btrfs`, `xfs`, which store their own UIDs on the file system. By
-   combining UID mapping mounts and a per-user-namespace `overflowuid`
-   we can make this work: the mount is established with a UID map
-   without entries, but with its `overflowuid` set to the desktop user's
-   UID, so that all files on the disk will be assigned to the
-   `overflowuid` and thus the user.
-
-   **Use-case #2**: UID mapping mounts with `systemd-homed`: any files
-   inside a LUKS home file system should be assigned to the UID the
-   user has assigned locally.
-
 2. Ability to unmount obstructed mounts. (This means: you have a stack
    of mounts on the very same inode, and you want to remove a mount in
    the middle. Right now, you can only remove the topmost mount.)
