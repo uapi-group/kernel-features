@@ -1,5 +1,11 @@
 # Kernel Features 🤞 🎁 🙏
 
+This is a list of kernel features that would be useful to have. The items on
+the list are strictly ideas. It is especially important to not take the items
+on this list as being implementation requests. Some of the ideas on this list
+are rather rough and unrefined. They serve as entry points for exploring the
+associated problem space.
+
 * Ability to unmount obstructed mounts. (This means: you have a stack
   of mounts on the very same inode, and you want to remove a mount in
   the middle. Right now, you can only remove the topmost mount.)
