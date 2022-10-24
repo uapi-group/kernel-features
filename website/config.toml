@@ -1,0 +1,7 @@
+baseURL = "https://uapi-group.org/kernel"
+languageCode = "en-us"
+title = "UAPI group generic documents and meeting minutes"
+theme = "hugo-book"
+
+[markup.goldmark.renderer]
+  unsafe = true # Allow HTML in md files
