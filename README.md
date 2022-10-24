@@ -1,7 +1,4 @@
-# Kernel Wish List 🤞 🎁 🙏
-
-Here are a bunch of things we'd really like to see added to the Linux
-Kernel APIs:
+# Kernel Features 🤞 🎁 🙏
 
 1. Per-user-namespace `overflowuid`.
 
