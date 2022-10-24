@@ -1,0 +1,336 @@
+<!doctype html><html lang=en dir=ltr><head><meta name=generator content="Hugo 0.104.3"><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Kernel Features 🤞 🎁 🙏 # This is a list of kernel features that would be useful to have. The items on the list are strictly ideas. It is especially important to not take the items on this list as being implementation requests. Some of the ideas on this list are rather rough and unrefined. They serve as entry points for exploring the associated problem space.
+Ability to unmount obstructed mounts."><meta name=theme-color content="#FFFFFF"><meta property="og:title" content><meta property="og:description" content><meta property="og:type" content="website"><meta property="og:url" content="https://uapi-group.org/kernel/"><title>| UAPI group generic documents and meeting minutes</title><link rel=manifest href=/kernel/manifest.json><link rel=icon href=/kernel/favicon.png type=image/x-icon><link rel=stylesheet href=/kernel/book.min.f716a89e40b01f033146ee402497165ac5bcf8935948094dceafbcb19f6f3c8d.css integrity="sha256-9xaonkCwHwMxRu5AJJcWWsW8+JNZSAlNzq+8sZ9vPI0="><script defer src=/kernel/en.search.min.c157d1970ca075f888ff5e3e6f3478769d5ea314e8b9afc7c9400ba23239ac6e.js integrity="sha256-wVfRlwygdfiI/14+bzR4dp1eoxToua/HyUALojI5rG4="></script>
+<link rel=alternate type=application/rss+xml href=https://uapi-group.org/kernel/index.xml title="UAPI group generic documents and meeting minutes"></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
+<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a href=/kernel><span>UAPI group generic documents and meeting minutes</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div></nav><script>(function(){var e=document.querySelector("aside.book-menu nav");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/kernel/svg/menu.svg class=book-icon alt=Menu></label>
+<strong></strong>
+<label for=toc-control><img src=/kernel/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents></nav></aside></header><article class=markdown><h1 id=kernel-features--->Kernel Features 🤞 🎁 🙏
+<a class=anchor href=#kernel-features--->#</a></h1><p>This is a list of kernel features that would be useful to have. The items on
+the list are strictly ideas. It is especially important to not take the items
+on this list as being implementation requests. Some of the ideas on this list
+are rather rough and unrefined. They serve as entry points for exploring the
+associated problem space.</p><ul><li><p>Ability to unmount obstructed mounts. (This means: you have a stack
+of mounts on the very same inode, and you want to remove a mount in
+the middle. Right now, you can only remove the topmost mount.)</p><p><strong>Use-Case:</strong> this is useful for replacing mounts atomically, for
+example for upgrading versioned disk images: first an old version
+of the image is mounted. Then a new version is mounted over the
+existing mount point, and then the lower mount point is
+removed. One such software would be <code>systemd-sysext</code>.</p></li><li><p>Ability to mount sub-directories of regular file systems instead of
+the top-level directory. i.e. for a file system <code>/dev/sda1</code> which
+contains a sub-directory <code>/foobar</code> mount <code>/foobar</code> without having
+to mount its parent directory first. Consider something like this:</p><pre tabindex=0><code>mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar
+</code></pre><p><strong>Use-Case:</strong> <code>systemd-homed</code> currently mounts a sub-directory of
+the per-user LUKS volume as the user&rsquo;s home directory (and not the
+root directory of the per-user LUKS volume&rsquo;s file system!), and in
+order to implement this invisibly from the host side requires a
+complex mount namespace exercise.</p></li><li><p>inotify() events for BSD file locks. BSD file locks
+(i.e. <code>flock()</code>, as opposed to POSIX <code>F_SETLK</code> and friends are
+inode-focussed, hence would be great if one could get asynchronous
+notification when they are released via inotify.</p><p><strong>Use-Case:</strong> udevd probes block devices whenever they pop up to
+create /dev/disk/by-label/* and similar symlinks. Formatting tools
+can temporarily block this behaviour by taking a BSD file lock on
+the block device (as per <a href=https://systemd.io/BLOCK_DEVICE_LOCKING%29>https://systemd.io/BLOCK_DEVICE_LOCKING)</a>,
+in order to make sure udevd doesn&rsquo;t probe file systems/partition
+tables that are only partially initialized. Currently, udevd uses
+inotify <code>IN_CLOSE_WRITE</code> notifications to detect whenever
+applications close a block device after writing to it, and
+automatically reprobes the device. This works reasonably OK given
+that block devices are usually closed at the same time as their
+BSD file lock is released, and vice versa. However, this is not
+fully correct: what udevd actually should be watching is the locks
+being released, not the devices being closed.</p></li><li><p><code>SCM_CGROUP</code> or a similar auxiliary socket message, that allows
+receivers to figure out which cgroup a sender is part of.</p><p><strong>Use-Case:</strong> <code>systemd-journald</code> picks up cgroup information from
+logging clients, in order to augment log records and allow
+filtering via this meta-information. In particular it derives
+service identity from that (so that requests such as &ldquo;Show me all
+log messages of service X!&rdquo; can be answered). This is currently
+racy, since it uses <code>SCM_CREDS</code>&rsquo; <code>.pid</code> field for this, which it then
+used to load <code>/proc/$PID/cgroup</code>. In particular for programs that
+log and immediately exit, the cgroup information frequently cannot
+be acquired anymore by <code>systemd-journald</code>.</p></li><li><p><code>SCM_PIDFD</code> or similar auxiliary socket message, that is a modern
+version of the <code>SCM_CREDS</code> message&rsquo;s <code>.pid</code> field, and provides a
+<code>pidfd</code> file descriptor to the originating peer process.</p><p><strong>Use-Case:</strong> security infrastructure (such as PolicyKit) can safely
+reference clients this way without fearing PID
+recycling. <code>systemd-journald</code> can acquire peer metadata this way in
+a less racy fashion, in particular safe against PID recycling.</p></li><li><p>Ability to link an <code>O_TMPFILE</code> file into a directory while <em>replacing</em> an
+existing file. (Currently there&rsquo;s only the ability to link it in, if the
+file name doesn&rsquo;t exist yet.)</p><p><strong>Use-Case:</strong> there are many programs (e.g. <code>systemd-hostnamed</code>
+when updating <code>/etc/hostname</code>) that atomically want to update a
+file, so that either the old or the new version is in place, but
+never a partially updated one. The canonical way to do this is by
+creating a temporary file with the new contents, and then renaming
+it to the filename of the file to update, thus atomically replacing
+it. Currently, the temporary file for this must be created with a
+random name, <code>O_TMPFILE</code> cannot be used, since for these files
+atomic-replace is not supported, currently.</p></li><li><p><code>O_REGULAR</code> (inspired by the existing <code>O_DIRECTORY</code> flag for
+<code>open()</code>), which opens a file only if it is of type <code>S_IFREG</code>.</p><p><strong>Use-Case:</strong> this would be very useful to write secure programs
+that want to avoid being tricked into opening device nodes with
+special semantics while thinking they operate on regular
+files. This is particularly relevant as many device nodes (or even
+FIFOs) come with blocking I/O (or even blocking <code>open()</code>!) by
+default, which is not expected from regular files backed by &ldquo;fast&rdquo;
+disk I/O. Consider implementation of a naive web browser which is
+pointed to <code>file://dev/zero</code>, not expecting an endless amount of
+data to read.</p></li><li><p><code>IP_UNICAST_IF</code> should be taken into account for routing decisions
+at UDP <code>connect()</code> time (currently it isn&rsquo;t, only <code>SO_BINDTOINDEX</code>
+is, but that does so much more than just that, and one often
+doesn&rsquo;t want that)</p><p><strong>Use-Case:</strong> DNS resolvers that associate DNS configuration with
+specific network interfaces (example: <code>systemd-resolved</code>) typically
+want to preferably route DNS traffic to the per-interface DNS
+server via that interface, but not make further restrictions on the
+origins or received replies, and all that without
+privileges. <code>IP_UNICAST_IF</code> fulfills this role fine for TCP, but
+for UDP it is not taken into account for the <code>connect()</code> routing
+decision.</p></li><li><p><code>unlinkat3(dir_fd, name, inode_fd)</code>: taking one file descriptor
+for the directory to remove a file in, and another one referring
+to the inode of the filename to remove. This call should only
+succeed if the specified filename still refers to the specified
+inode.</p><p><strong>Use-Case:</strong> code that operates on a well-know path that might be
+shared by multiple programs that jointly manage it might want to
+safely remove a filename under the guarantee it still refers to
+the expected inode. As a specific example, consider lock files,
+that should be cleaned up only if they still refer to the assumed
+owner&rsquo;s instance, but leave the file in place if another process
+already took over the filename.</p></li><li><p>Ability to determine if a mount point belongs to the current user
+namespace, in order to check if there&rsquo;s a chance a process can
+safely unmount it (as that only works for mounts owned by the same
+user namespaces — or one further down the tree, but not any up the
+tree). A simple, additional field in <code>/proc/self/mountinfo</code>
+container the owning user namespace ID would probably already
+suffice.</p><p><strong>Use-Case:</strong> the <code>systemd</code> system and service manager tries to unmount
+all established mounts on shutdown. Inside of container
+environments where specific mounts are established by the
+container manager (and not the payload itself) this will
+ultimately fail if user namespaces are enabled. In order to clean
+up the shutdown logic it would be very good to be able to
+determine whether a specific mount could even possibly be
+unmounted or whether it&rsquo;s not worth the effort to include the
+unmount in the system shutdown transaction.</p></li><li><p>A way to mark mounts that receive mount propagation events from
+elsewhere so that these propagated mounts are established
+read-only implicitly. Right now, if a mount receives a mount
+propagation event it will have the exact same <code>MS_RDONLY</code>,
+<code>MS_NODEV</code>, … flags as it has where it originated. It would be
+very useful if an <code>MS_RDONLY</code> could be ORed into the mount flags
+automatically whenever propagated elsewhere.</p><p><strong>Use-Case:</strong> various mount namespace based sandboxes
+(e.g. <code>systemd</code>&rsquo;s <code>ProtectSystem=</code> option) mark large parts of the
+host file hierarchy read-only via mounting it
+<code>MS_RDONLY|MS_BIND|MS_REMOUNT</code>, but generally intend to leave the
+file hierarchy besides that the way it is, and that includes they
+typically still want to be able to receive mount events to
+directories such as <code>/mnt/</code> and <code>/media/</code> in these sandboxed
+environments. Right now, any such propagation then happens in
+writable mode, even if the file hierarchy otherwise is almost
+entirely read-only. To close this gap it would be great if such
+propagated mounts could implicitly gain <code>MS_RDONLY</code> as they are
+propagated.</p></li><li><p>Ability to turn off <code>SCM_RIGHTS</code> reception for <code>AF_UNIX</code>
+sockets. Right now reception of file descriptors is always on when
+a process makes the mistake of invoking <code>recvmsg()</code> on such a
+socket. This is problematic since <code>SCM_RIGHTS</code> installs file
+descriptors in the recipient process&rsquo; file descriptor
+table. Getting rid of these file descriptors is not necessarily
+easy, as they could refer to &ldquo;slow-to-close&rdquo; files (think: dirty
+file descriptor referring to a file on an unresponsive NFS server,
+or some device file descriptor), that might cause the recipient to
+block for a longer time when it tries to them. Programs reading
+from an <code>AF_UNIX</code> socket currently have three options:</p><ol><li><p>Never use <code>recvmsg()</code>, and stick to <code>read()</code>, <code>recv()</code> and
+similar which do not install file descriptors in the recipients
+file descriptor table.</p></li><li><p>Ignore the problem, and simply <code>close()</code> the received file descriptors
+it didn&rsquo;t expect, thus possibly locking up for a longer time.</p></li><li><p>Fork off a thread that invokes <code>close()</code>, which mitigates the
+risk of blocking, but still means a sender can cause resource
+exhaustion in a recipient by flooding it with file descriptors,
+as for each of them a thread needs to be spawned and a file
+descriptor is taken while it is in the process of being closed.</p></li></ol><p>(Another option of course is to never talk <code>AF_UNIX</code> to peers that
+are not trusted to not send unexpected file descriptors.)</p><p>A simple knob that allows turning off <code>SCM_RIGHTS</code> right reception
+would be useful to close this weakness, and would allow
+<code>recvmsg()</code> to be called without risking file descriptors to be
+installed in the file descriptor table, and thus risking a
+blocking <code>close()</code> or a form of potential resource exhaustion.</p><p><strong>Use-Case:</strong> any program that uses <code>AF_UNIX</code> sockets and uses (or
+would like to use) <code>recvmsg()</code> on it (which is useful to acquire
+other metadata). Example: logging daemons that want to collect
+timestamp or <code>SCM_CREDS</code> auxiliary data, or the D-Bus message
+broker and suchlike.</p></li><li><p>Another alternative to this could be if some form of filtering
+could be enforced on the file descriptors suitable for en-queuing
+on the <code>AF_UNIX</code> socket. i.e. allow filtering by superblock type
+or similar, so that policies such as &ldquo;only <code>memfd</code>s are OK to be
+received&rdquo; may be expressed. (BPF?).</p><p><strong>Use-Case:</strong> a above.</p></li><li><p>A reliable (non-heuristic) way to detect from userspace if the
+current process is running in a PID namespace that is not the main
+PID namespace. PID namespaces are probably the primary type of
+namespace that identify a container environment. While many
+heuristics exist to determine generically whether one is executed
+inside a container, it would be good to have a correct,
+well-defined way to determine this.</p><p><strong>Use-Case:</strong> tools such as <code>systemd-detect-virt</code> exist to determine
+container execution, but typically resolve to checking for
+specific implementations. It would be much nicer and universally
+applicable if such a check could be done generically. It would
+probably suffice to provide an <code>ioctl()</code> call on the <code>pidns</code> file
+descriptor that reveals this kind of information in some form.</p></li><li><p>A way to exclude <code>pidfd</code> watched processes from <code>waitid(P_ALL, …)</code>.</p><p><strong>Use-Case:</strong> various programs use <code>waitid(P_ALL, …)</code> to collect exit
+information of exited child processes. In particular PID 1 and
+processes using <code>PR_SET_CHILD_SUBREAPER</code> use this as they may
+collect unexpected children that have been reparented from dying
+sub-processes, and that need to be reaped in order to clean up the
+PID space. Currently, these programs cannot easily mix waiting for
+specific sub-processes via <code>pidfd</code> with waiting for the other
+<em>unexpected</em> children via <code>waitid(P_ALL, …)</code> since the latter also
+reaps (and thus invalidates) the pidfd-tracked
+children. Specifically, the <code>systemd</code> service manager would like
+to use <code>pidfd</code>s to remove PID recycling security issues, but
+currently cannot as it also needs to generically wait for such
+unexpected children.</p></li><li><p>Mount notifications that do not require continuous re-scanning of
+<code>/proc/self/mountinfo</code>. Currently, if a program wants to track
+mounts established on the system it can receive <code>poll()</code>able
+events via a file descriptor to <code>/proc/self/mountinfo</code>. When
+receiving them it needs to rescan the file from the top and
+compare it with the previous scan. This is both slow and
+racy. It&rsquo;s slow on systems with a large number of mounts as the
+cost for re-scanning the table has to be paid for every change to
+the mount table. It&rsquo;s racy because quickly added and removed
+mounts might not be noticed.</p><p><strong>Use-Case:</strong> <code>systemd</code> tracks the mount table to integrate the mounts
+into it own dependency management.</p></li><li><p>Ability to to do cross-namespace mounts by file
+descriptor. Currently preparing a mount point in one namespace and then
+mounting it via <code>mount("/proc/self/fd/…", "/somewhere/else", NULL, MS_BIND…)</code> is prohibited by the kernel.</p><p><strong>Use-Case:</strong> various programs prepare complex mount hierarchies in
+private mount namespaces, that they later want to make appear in
+the host mount namespace fully put together (e.g. <code>systemd-dissect --mount</code>). This can currently only be implemented via mount
+propagation, which however has effects way beyond the installation
+of the one mount hierarchy that shall be installed.</p></li><li><p>An asynchronous or forced <code>close()</code>, that guarantees that
+userspace doesn&rsquo;t have to risk blocking for longer periods of time
+when trying to get rid of unwanted file descriptors, possibly
+received via <code>recvmsg()</code> + <code>SCM_RIGHTS</code> (see above). Currently,
+<code>close()</code> of various file descriptors (for example those referring
+to slow storage, e.g. non-responding NFS servers and such) might
+take arbitrary amounts of time, potentially into the minute range
+and more. This makes it risky accepting file descriptors on
+publicly accessible <code>AF_UNIX</code> sockets, the way like IPC brokers
+(e.g. D-Bus) do it: if a rogue client keeps sending file
+descriptors that because unexpected must be closed immediately it
+might cause the receiving process to effectively crawl, when it is
+busy closing them all. A special form of <code>close()</code> that simply
+detaches a file descriptor from the file descriptor table without
+blocking on IO in any form would be great to close this issue.</p><p><strong>Use-Case:</strong> any program that receives file descriptors via <code>AF_UNIX</code>
+from untrusted clients would benefit from this. e.g. D-Bus
+brokers.</p></li><li><p><code>CLOCK_MONOTONIC</code> network timestamps. Currently network timestamps
+are exclusively in <code>CLOCK_REALTIME</code>, even though for many (most?)
+a monotonic clock would be much preferable, as calculations become
+easier when one doesn&rsquo;t have to think about clock jumps and
+similar.</p><p><strong>Use-Case:</strong> <code>systemd-journald</code> collects implicit timestamps via
+<code>AF_UNIX</code> time-stamping, in <code>CLOCK_REALTIME</code>, even though for its
+internal logic only monotonic timestamps are used, as log records
+are searched via bisection in ordered tables, that require
+strictly increasing timestamps. In particular during boot (where
+<code>CLOCK_REALTIME</code> is often not available, stable or subject to
+corrections) it would be good to have reliable, monotonic
+timestamps on all log records.</p></li><li><p>Truly immutable loopback block devices. Right now setting up a
+loopback block device in read-only mode, backed by a read-only
+file (stored on a regular read/write file system), and then
+mounting it with <code>ext4</code> also in <code>MS_RDONLY</code>mode <em>will</em> result in
+changes to the file, quite unexpectedly 🤯. Ideally, if a loopback
+block device is set up in read-only mode this should guarantee
+that the backing file remains unmodified by it.</p><p><strong>Use-Case:</strong> disk image build tools that want to reproducibly and
+verifiable build images must be able to rely that mounting them in
+read-only mode does not alter the images in any way. In particular
+when working in computer forensics one must be able to rely that
+file systems that are analyzed remain unmodified by the analysis.</p></li><li><p>A time-out for the flock() syscall. Faking the time-out in
+userspace is nasty: most code does it with alarm() (or equivalent
+APIs), but that&rsquo;s racy since on a heavily loaded system the
+timeout might trigger before the flock() call is entered, in
+particular if short time-outs shall be used. More accurate is to
+do the locking in a short-lived child processed, but that&rsquo;s
+difficult already in C, and almost impossible in languages that do
+not allow fork() without execve().</p><p><strong>Use-Case:</strong> as mentioned above systemd-udev allows synchronizing
+block device probing via flock(). Often userspace wants to wait
+for that, but without risking to hang forever.</p></li><li><p>Extend <code>mount_setattr()</code> to allow changing mount properties ignoring any
+failures.</p><p><strong>Use-Case:</strong> workloads that know that there are mounts in a mount tree
+whose attributes cannot be changed by the caller don&rsquo;t want
+<code>mount_settattr()</code> to fail on the first mount it failed to convert. Give
+them a flag to request changes ignoring failures.</p></li><li><p>Add upgrade masks to <code>openat2()</code>. Extend <code>struct open_how</code> to allow
+restrict re-opening of file descriptors.</p><p><strong>Use-Case:</strong> block services or containers from re-opening/upgrading an
+<code>O_PATH</code> file descriptor through e.g. <code>/proc/&lt;pid>/fd/&lt;nr</code> as <code>O_WRONLY</code>.</p></li><li><p>Implement a mount-specific companion to <code>statx()</code> that puts at least the
+following information into <code>struct mount_info</code>:</p><ul><li>mount flags: <code>MOUNT_ATTR_RDONLY</code>, &mldr;</li><li>time flags: <code>MOUNT_ATTR_RELATIME</code>, &mldr;
+Could probably be combined with mount flags.</li><li>propagation setting: <code>MS_SHARED)</code>, &mldr;</li><li>peer group</li><li>mnt id of the mount</li><li>mnt id of the mount&rsquo;s parent</li><li>owning userns</li></ul><p>There&rsquo;s a bit more advanced stuff systemd would really want but which
+I think is misplaced in a mountinfo system call including:</p><ul><li>list of primary and auxiliary block device major/minor</li><li>diskseq value of those device nodes (This is a new block device feature
+we added that allows preventing device recycling issues when e.g.
+removing usb devices very quickly and is needed for udev.)</li><li>uuid/fsid</li><li>feature flags (<code>O_TMPFILE</code>, <code>RENAME_EXCHANGE</code> supported etc.)</li></ul><p><strong>Use-Case:</strong> low-level userspace tools have to interact with advanced
+mount information constantly. This is currently costly and brittel because
+they have to go and parse <code>/proc/&lt;pid>/mountinfo</code>.</p></li><li><p>Make quotas work with user namespaces. The quota codepaths in the kernel
+currently broken and inconsistent and most interesting operations are
+guarded behind <code>capable(CAP_SYS_ADMIN)</code>, i.e., require <code>CAP_SYS_ADMIN</code> in
+the initial user namespace. We should rework these codepaths to work with
+user namespaces and then see whether we can make them work with idmapped
+mounts.</p><p><strong>Use-Case:</strong> using quotas correctly in containers.</p></li><li><p>Add a new <code>MOUNT_SETATTR_LOCKED</code> flag to <code>mount_setattr(..., ..., MOUNT_SETATTR_LOCKED, ..., ...)</code>.
+The <code>MOUNT_SETATTR_LOCKED</code> flag allow a <code>ns_capable(mntns->user_ns, CAP_SYS_ADMIN)</code> caller to lock all mount properties. The mount properties
+cannot be changed anymore.</p><p><strong>Use-Case:</strong> allowing processes to lock mount properties even for
+privileged processes. Locking mount properties would currently involve
+having to have the mount namespace of the container be owned by an ancestor
+user namespace. But this doesn&rsquo;t just lock a single mount or mount subtree
+it locks all mounts in the mount namespace, i.e., the mount table cannot be
+altered.</p></li><li><p>Add a new <code>OPEN_TREE_CLEAR</code> flag to <code>open_tree()</code>. This flag can only be
+used in conjunction with <code>OPEN_TREE_CLONE</code>. When specified it will clear
+all mount properties from that mount including the mount&rsquo;s idmapping.
+Requires the caller to be <code>ns_capable(mntns->user_ns)</code>. If idmapped mounts
+are encountered the caller must be <code>ns_capable(sb->user_ns, CAP_SYS_ADMIN)</code>
+in the filesystems user namespace.</p><p>Locked mount properties cannot be changed. A mount&rsquo;s idmapping becomes
+locked if it propagates across user namespaces.</p><p>This is useful to get a new, clear mount and also allows the caller to
+create a new detached mount with an idmapping attached to the mount. Iow,
+the caller may idmap the mount afterwards.</p><p><strong>Use-Case:</strong> A user may already use an idmapped mount for their home
+directory. And once a mount has been idmapped the idmapping cannot be
+changed anymore. This allows for simple semantics and allows to avoid
+lifetime complexity in order to account for scenarios where concurrent
+readers or writers might still use a given user namespace while it is about
+to be changed.
+But this poses a problem when the user wants to attach an idmapping to
+a mount that is already idmapped. The new flag allows to solve this
+problem. A sufficiently privileged user such as a container manager can
+create a user namespace for the container which expresses the desired
+ownership. Then they can create a new detached mount without any prior
+mount properties via OPEN_TREE_CLEAR and then attach the idmapping to this
+mount.</p></li><li><p>Enforce that the user namespace about to be attached to a mount must have
+an idmapping written.</p><p><strong>Use-Case:</strong> Tighten the semantics.</p></li><li><p>Add an extension to <code>setns()</code> to allow attaching to all namespaces of
+a process <code>SETNS_PIDFD_ALL</code> different from the caller&rsquo;s namespaces.
+Currently specifying e.g., <code>CLONE_NEWUSER</code> fails if the caller is in the
+same user namespace as the target process. This is very inconvenient.</p><p><strong>Use-Case:</strong> Make it trivial to attach to all namespaces of a process
+without having to figure out whether the caller is already in the same
+namespace or not.</p></li><li><p>(kAPI) Add security hook to <code>mount_setattr()</code>.</p><p><strong>Use-Case:</strong> Allow LSMs to make decisions about what mount properties to
+allow and what to deny.</p></li><li><p>(kAPI) Add security hook to <code>create_user_ns()</code>.</p><p><strong>Use-Case:</strong> Allow LSMs to monitor user namespace creation.</p></li><li><p>A per-cgroup knob for coredump sizes. Currently coredump size
+control is strictly per process, and primarily under control of
+the processes themselves. It would be good if we had a per-cgroup
+knob instead, that is under control of the service manager.</p><p><strong>Use-Case:</strong> coredumps can be heavy to generate. For different
+usecases it would be good to be able to opt-in or opt-out
+dynamically from coredumps for specific services, at runtime
+without restarting them.</p></li><li><p>A way to race-freely create an (non-file) inode and immediately
+open it. For regular files we have open(O_CREAT) for creating a
+new file inode, and returning a pinning fd to it. This is missing
+for other inode types, such as directories, device nodes,
+FIFOs. The lack of such functionality means that when populating a
+directory tree there&rsquo;s always a race involved: the inodes first
+need to be created, and then opened to adjust their
+permissions/ownership/labels/timestamps/acls/xattrs/…, but in the
+time window between the creation and the opening they might be
+replaced by something else. Addressing this race without proper
+APIs is possible (by immediately fstat()ing what was opened, to
+verify that it has the right inode type), but difficult to get
+right. Hence, mkdirat_fd() that creates a directory <em>and</em> returns
+an O_DIRECTORY fd to it would be great. As would be mknodeat_fd()
+that creates a device node, FIFO or (dead) socket and returns an
+O_PATH fd to it. And of course symlinkat_fd() that creates a
+symlink and returns an O_PATH fd to it.</p><p><strong>Use-Case:</strong> any program that creates/unpacks not just files, but
+directories, device nodes, fifos, and wants to ensure that they
+safely get the right attributes applied, even if other code might
+simultaneously have access to the same directory tree.</p></li><li><p>The io_uring subsystem is open to adding classic existing synchronous
+system calls (e.g. setns() or mount() or other) to io_uring. They also said
+they would support adding new functionality into io_uring that is not
+exposed through system calls yet.</p></li><li><p>Explore the idea of mapping different uids/gids to the same uids/gids, i.e.
+65534:1000:1 50000:1000:1. This will only work if the mount is read-only as
+the kernel wouldn&rsquo;t know what uid/gid would need to be put to disk
+otherwise (65534? 50000? the first one that is mapped?).</p><p><strong>Use-Case:</strong> Delegate multiple {g,u}ids to the same user. Merging
+ownership similar to how overlayfs merges files. Bindfs
+(<a href=https://bindfs.org/docs/bindfs.1.html#sect3>https://bindfs.org/docs/bindfs.1.html#sect3</a>) allows this concept too.</p></li><li><p><a href=https://fuchsia.dev/fuchsia-src/concepts/filesystems/blobfs><code>blobfs</code></a>
+for Linux. i.e. a minimalistic file system, that can store
+authenticated (Verity) data files, that can be written once, and
+not be modified after that, and provide stable handles (i.e. is
+content-addressable) to them.</p><p><strong>Use-Case:</strong> This would deliver just about enough to place
+trusted OS resources (binaries, kernels, initrds, fs trees, other
+resources) in them, without having to trust the medium and IO
+underneath. Should be simple enough to even implement in a boot
+loader and similar, without making things vulnerable to rogue file
+system image attacks. The OS and its payloads (apps, containers,
+…) could then be composed from these resources, through means like
+overlayfs, namespacing and more.</p></li><li><p>Namespace-able loop and block devices, usable inside user namespaces.</p><p><strong>Use-Case:</strong> Allow mounting images inside nspawn containers, and using
+RootImage= and friends in the systemd user manager.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
