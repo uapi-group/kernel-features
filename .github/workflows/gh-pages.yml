@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    if: github.repository == 'uapi-group/kernel'
+    if: github.repository == 'uapi-group/kernel-features'
     runs-on: ubuntu-22.04
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
