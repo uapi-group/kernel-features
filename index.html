@@ -28,7 +28,8 @@ inode-focussed, hence would be great if one could get asynchronous
 notification when they are released via inotify.</p><p><strong>Use-Case:</strong> udevd probes block devices whenever they pop up to
 create /dev/disk/by-label/* and similar symlinks. Formatting tools
 can temporarily block this behaviour by taking a BSD file lock on
-the block device (as per <a href=https://systemd.io/BLOCK_DEVICE_LOCKING%29>https://systemd.io/BLOCK_DEVICE_LOCKING)</a>,
+the block device (as per
+<a href=https://systemd.io/BLOCK_DEVICE_LOCKING%29>https://systemd.io/BLOCK_DEVICE_LOCKING)</a>,
 in order to make sure udevd doesn&rsquo;t probe file systems/partition
 tables that are only partially initialized. Currently, udevd uses
 inotify <code>IN_CLOSE_WRITE</code> notifications to detect whenever
@@ -321,7 +322,8 @@ exposed through system calls yet.</p></li><li><p>Explore the idea of mapping dif
 the kernel wouldn&rsquo;t know what uid/gid would need to be put to disk
 otherwise (65534? 50000? the first one that is mapped?).</p><p><strong>Use-Case:</strong> Delegate multiple {g,u}ids to the same user. Merging
 ownership similar to how overlayfs merges files. Bindfs
-(<a href=https://bindfs.org/docs/bindfs.1.html#sect3>https://bindfs.org/docs/bindfs.1.html#sect3</a>) allows this concept too.</p></li><li><p><a href=https://fuchsia.dev/fuchsia-src/concepts/filesystems/blobfs><code>blobfs</code></a>
+(
+<a href=https://bindfs.org/docs/bindfs.1.html#sect3>https://bindfs.org/docs/bindfs.1.html#sect3</a>) allows this concept too.</p></li><li><p><a href=https://fuchsia.dev/fuchsia-src/concepts/filesystems/blobfs><code>blobfs</code></a>
 for Linux. i.e. a minimalistic file system, that can store
 authenticated (Verity) data files, that can be written once, and
 not be modified after that, and provide stable handles (i.e. is
