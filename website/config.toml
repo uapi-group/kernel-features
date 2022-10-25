@@ -3,5 +3,19 @@ languageCode = "en-us"
 title = "UAPI group generic documents and meeting minutes"
 theme = "hugo-book"
 
+[[menu.after]]
+  name = "-"
+  weight = 10
+[[menu.after]]
+  name = "Collaborate on Github"
+  url = "https://github.com/uapi-group/kernel"
+  weight = 10
+
 [markup.goldmark.renderer]
   unsafe = true # Allow HTML in md files
+
+[params]
+  BookRepo = 'https://github.com/uapi-group/kernel'
+  BookCommitPath = 'commit'
+  BookEditPath = 'edit/main'
+  BookIndexPage = 'README.md'
