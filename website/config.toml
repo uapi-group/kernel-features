@@ -1,4 +1,4 @@
-baseURL = "https://uapi-group.org/kernel"
+baseURL = "https://uapi-group.org/kernel-features"
 languageCode = "en-us"
 title = "UAPI group generic documents and meeting minutes"
 theme = "hugo-book"
@@ -8,14 +8,14 @@ theme = "hugo-book"
   weight = 10
 [[menu.after]]
   name = "Collaborate on Github"
-  url = "https://github.com/uapi-group/kernel"
+  url = "https://github.com/uapi-group/kernel-features"
   weight = 10
 
 [markup.goldmark.renderer]
   unsafe = true # Allow HTML in md files
 
 [params]
-  BookRepo = 'https://github.com/uapi-group/kernel'
+  BookRepo = 'https://github.com/uapi-group/kernel-features'
   BookCommitPath = 'commit'
   BookEditPath = 'edit/main'
   BookIndexPage = 'README.md'
