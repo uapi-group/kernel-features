@@ -11,9 +11,12 @@ theme = "hugo-book"
   name = "⸻"
   weight = 2
 
-[[menu.after]]
-  name = "⸻"
-  weight = 10
+# Uncomment to show second separator after more content files were added
+#
+#[[menu.after]]
+#  name = "⸻"
+#  weight = 10
+
 [[menu.after]]
   name = "Collaborate on Github"
   url = "https://github.com/uapi-group/kernel-features"
