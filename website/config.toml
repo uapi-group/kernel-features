@@ -1,6 +1,6 @@
 baseURL = "https://uapi-group.org/kernel-features"
 languageCode = "en-us"
-title = "UAPI group generic documents and meeting minutes"
+title = "UAPI Group Kernel Feature Ideas"
 theme = "hugo-book"
 
 [[menu.after]]
