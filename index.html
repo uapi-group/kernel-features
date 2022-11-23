@@ -335,5 +335,16 @@ loader and similar, without making things vulnerable to rogue file
 system image attacks. The OS and its payloads (apps, containers,
 …) could then be composed from these resources, through means like
 overlayfs, namespacing and more.</p></li><li><p>Namespace-able loop and block devices, usable inside user namespaces.</p><p><strong>Use-Case:</strong> Allow mounting images inside nspawn containers, and using
-RootImage= and friends in the systemd user manager.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+RootImage= and friends in the systemd user manager.</p></li><li><p>Support idmapped mounts for tmpfs</p><p><strong>Use-Case:</strong> Runtimes such as Kubernetes use a lot of <code>tmpfs</code> mounts of
+individual files or directories to expose information to containers/pods.
+Instead of having to change ownership permanently allow them to use an
+idmapped mount instead.</p><p>@rata and @giuseppe brought this suggestion forward. For Kubernetes it is
+sufficient to support idmapped mounts of <code>tmpfs</code> instances mounted in the
+initial user namespace. However, in the future idmapped
+mounts of <code>tmpfs</code> instances mounted in user namespaces should be supported.
+Other container runtimes want to make use of this. The kernel is able to
+support this since at least <code>5.17</code>.</p><p>Things to remember are that <code>tmpfs</code> mounts can serve as lower- or upper
+layers in <code>overlayfs</code> and care needs to be taken that this remains safe if
+idmapped mounts of <code>tmpfs</code> instances mounted in user namespaces are
+supported.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
