@@ -6,6 +6,10 @@ on this list as being implementation requests. Some of the ideas on this list
 are rather rough and unrefined. They serve as entry points for exploring the
 associated problem space.
 
+**When implementing ideas on this list or ideas inspired by this list please
+point that out explicitly and clearly in the associated patches and Cc
+`Christian Brauner <brauner (at) kernel (dot) org`.**
+
 * Ability to unmount obstructed mounts. (This means: you have a stack
   of mounts on the very same inode, and you want to remove a mount in
   the middle. Right now, you can only remove the topmost mount.)
