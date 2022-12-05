@@ -6,6 +6,10 @@ on this list as being implementation requests. Some of the ideas on this list
 are rather rough and unrefined. They serve as entry points for exploring the
 associated problem space.
 
+**When implementing ideas on this list or ideas inspired by this list please
+point that out explicitly and clearly in the associated patches and Cc
+`Christian Brauner <brauner (at) kernel (dot) org`.**
+
 * Ability to unmount obstructed mounts. (This means: you have a stack
   of mounts on the very same inode, and you want to remove a mount in
   the middle. Right now, you can only remove the topmost mount.)
@@ -529,3 +533,17 @@ associated problem space.
   layers in `overlayfs` and care needs to be taken that this remains safe if
   idmapped mounts of `tmpfs` instances mounted in user namespaces are
   supported.
+
+* Support detached mounts with `pivot_root()`
+
+  The new rootfs must currently refer to an attached mount. This restriction
+  seems unnecessary. We should allow the new rootfs to refer to a detached
+  mount.
+
+  This will allow a service- or container manager to create a new rootfs as
+  a detached, private mount that isn't exposed anywhere in the filesystem and
+  then `pivot_root()` into it.
+
+  Since `pivot_root()` only takes path arguments the new rootfs would need to
+  be passed via `/proc/<pid>/fd/<nr>`. In the long run we should add a new
+  `pivot_root()` syscall operating on file descriptors instead of paths.
