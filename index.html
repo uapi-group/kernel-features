@@ -354,5 +354,17 @@ mount.</p><p>This will allow a service- or container manager to create a new roo
 a detached, private mount that isn&rsquo;t exposed anywhere in the filesystem and
 then <code>pivot_root()</code> into it.</p><p>Since <code>pivot_root()</code> only takes path arguments the new rootfs would need to
 be passed via <code>/proc/&lt;pid>/fd/&lt;nr></code>. In the long run we should add a new
-<code>pivot_root()</code> syscall operating on file descriptors instead of paths.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+<code>pivot_root()</code> syscall operating on file descriptors instead of paths.</p></li><li><p>Device cgroup guard to allow <code>mknod()</code> in non-initial userns</p><p>If a container manager restricts its unprivileged (user namespaced)
+children by a device cgroup, it is not necessary to deny <code>mknod()</code>
+anymore. Thus, user space applications may map devices on different
+locations in the file system by using <code>mknod()</code> inside the container.</p><p><strong>Use-Case:</strong> A use case for this, which is applied by users of GyroidOS,
+is to run <code>virsh</code> for VMs inside an unprivileged container. <code>virsh</code> or
+libvirt creates device nodes, e.g., <code>/var/run/libvirt/qemu/11-fgfg.dev/null</code>
+which currently fails in a non-initial userns, even if a cgroup device white
+list with the corresponding major, minor of <code>/dev/null</code> exists. Thus, in
+this case the usual bind mounts or pre populated device nodes under <code>/dev</code>
+are not sufficient.</p><p>An initial group internal RFC exists in
+(
+<a href=https://github.com/quitschbo/linux/tree/devcg_guard_rfc%29>https://github.com/quitschbo/linux/tree/devcg_guard_rfc)</a>.
+See commit message for more implementation specific details.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
