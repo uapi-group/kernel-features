@@ -566,3 +566,15 @@ point that out explicitly and clearly in the associated patches and Cc
   An initial group internal RFC exists in
   (https://github.com/quitschbo/linux/tree/devcg_guard_rfc).
   See commit message for more implementation specific details.
+
+* In a similar vein to `AT_FDCWD`, add `AT_FDROOT` which causes relative and 
+  absolute paths to get interpreted relative to "/". 
+
+  **Use-Case:** When writing code that either operates on the host filesystem or
+  on a root directory, if you want to use `AT_FDCWD` to indicate the host 
+  filesystem, you have to use absolute paths to make sure they're not 
+  interpreted relative to the current working directory. However, when passing
+  absolute paths to any of the at() system calls, any provided directory file
+  descriptor is ignored. Ideally, when writing this kind of code, we'd be able
+  to use relative paths everywhere and have `AT_FDROOT` available to specify 
+  that a path is relative to the host filesystem.
