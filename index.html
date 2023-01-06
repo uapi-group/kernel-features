@@ -366,5 +366,13 @@ this case the usual bind mounts or pre populated device nodes under <code>/dev</
 are not sufficient.</p><p>An initial group internal RFC exists in
 (
 <a href=https://github.com/quitschbo/linux/tree/devcg_guard_rfc%29>https://github.com/quitschbo/linux/tree/devcg_guard_rfc)</a>.
-See commit message for more implementation specific details.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+See commit message for more implementation specific details.</p></li><li><p>In a similar vein to <code>AT_FDCWD</code>, add <code>AT_FDROOT</code> which causes relative and
+absolute paths to get interpreted relative to &ldquo;/&rdquo;.</p><p><strong>Use-Case:</strong> When writing code that either operates on the host filesystem or
+on a root directory, if you want to use <code>AT_FDCWD</code> to indicate the host
+filesystem, you have to use absolute paths to make sure they&rsquo;re not
+interpreted relative to the current working directory. However, when passing
+absolute paths to any of the at() system calls, any provided directory file
+descriptor is ignored. Ideally, when writing this kind of code, we&rsquo;d be able
+to use relative paths everywhere and have <code>AT_FDROOT</code> available to specify
+that a path is relative to the host filesystem.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
