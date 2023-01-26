@@ -517,7 +517,9 @@ point that out explicitly and clearly in the associated patches and Cc
   **Use-Case:** Allow mounting images inside nspawn containers, and using
   RootImage= and friends in the systemd user manager.
 
-* Support idmapped mounts for tmpfs
+* [x] Support idmapped mounts for tmpfs
+
+  **🙇 `7a80e5b8c6fa ("shmem: support idmapped mounts for tmpfs")` 🙇**
 
   **Use-Case:** Runtimes such as Kubernetes use a lot of `tmpfs` mounts of
   individual files or directories to expose information to containers/pods.
