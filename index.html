@@ -187,13 +187,7 @@ racy. It&rsquo;s slow on systems with a large number of mounts as the
 cost for re-scanning the table has to be paid for every change to
 the mount table. It&rsquo;s racy because quickly added and removed
 mounts might not be noticed.</p><p><strong>Use-Case:</strong> <code>systemd</code> tracks the mount table to integrate the mounts
-into it own dependency management.</p></li><li><p>Ability to to do cross-namespace mounts by file
-descriptor. Currently preparing a mount point in one namespace and then
-mounting it via <code>mount("/proc/self/fd/…", "/somewhere/else", NULL, MS_BIND…)</code> is prohibited by the kernel.</p><p><strong>Use-Case:</strong> various programs prepare complex mount hierarchies in
-private mount namespaces, that they later want to make appear in
-the host mount namespace fully put together (e.g. <code>systemd-dissect --mount</code>). This can currently only be implemented via mount
-propagation, which however has effects way beyond the installation
-of the one mount hierarchy that shall be installed.</p></li><li><p>An asynchronous or forced <code>close()</code>, that guarantees that
+into it own dependency management.</p></li><li><p>An asynchronous or forced <code>close()</code>, that guarantees that
 userspace doesn&rsquo;t have to risk blocking for longer periods of time
 when trying to get rid of unwanted file descriptors, possibly
 received via <code>recvmsg()</code> + <code>SCM_RIGHTS</code> (see above). Currently,
@@ -291,7 +285,7 @@ Currently specifying e.g., <code>CLONE_NEWUSER</code> fails if the caller is in 
 same user namespace as the target process. This is very inconvenient.</p><p><strong>Use-Case:</strong> Make it trivial to attach to all namespaces of a process
 without having to figure out whether the caller is already in the same
 namespace or not.</p></li><li><p>(kAPI) Add security hook to <code>mount_setattr()</code>.</p><p><strong>Use-Case:</strong> Allow LSMs to make decisions about what mount properties to
-allow and what to deny.</p></li><li><p>(kAPI) Add security hook to <code>create_user_ns()</code>.</p><p><strong>Use-Case:</strong> Allow LSMs to monitor user namespace creation.</p></li><li><p>A per-cgroup knob for coredump sizes. Currently coredump size
+allow and what to deny.</p></li><li><p><input checked disabled type=checkbox> (kAPI) Add security hook to <code>create_user_ns()</code>.</p><p><strong>🙇 <code>7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()")</code> 🙇</strong></p><p><strong>Use-Case:</strong> Allow LSMs to monitor user namespace creation.</p></li><li><p>A per-cgroup knob for coredump sizes. Currently coredump size
 control is strictly per process, and primarily under control of
 the processes themselves. It would be good if we had a per-cgroup
 knob instead, that is under control of the service manager.</p><p><strong>Use-Case:</strong> coredumps can be heavy to generate. For different
@@ -337,7 +331,7 @@ loader and similar, without making things vulnerable to rogue file
 system image attacks. The OS and its payloads (apps, containers,
 …) could then be composed from these resources, through means like
 overlayfs, namespacing and more.</p></li><li><p>Namespace-able loop and block devices, usable inside user namespaces.</p><p><strong>Use-Case:</strong> Allow mounting images inside nspawn containers, and using
-RootImage= and friends in the systemd user manager.</p></li><li><p>Support idmapped mounts for tmpfs</p><p><strong>Use-Case:</strong> Runtimes such as Kubernetes use a lot of <code>tmpfs</code> mounts of
+RootImage= and friends in the systemd user manager.</p></li><li><p><input checked disabled type=checkbox> Support idmapped mounts for tmpfs</p><p><strong>🙇 <code>7a80e5b8c6fa ("shmem: support idmapped mounts for tmpfs")</code> 🙇</strong></p><p><strong>Use-Case:</strong> Runtimes such as Kubernetes use a lot of <code>tmpfs</code> mounts of
 individual files or directories to expose information to containers/pods.
 Instead of having to change ownership permanently allow them to use an
 idmapped mount instead.</p><p>@rata and @giuseppe brought this suggestion forward. For Kubernetes it is
@@ -366,15 +360,12 @@ this case the usual bind mounts or pre populated device nodes under <code>/dev</
 are not sufficient.</p><p>An initial group internal RFC exists in
 (
 <a href=https://github.com/quitschbo/linux/tree/devcg_guard_rfc%29>https://github.com/quitschbo/linux/tree/devcg_guard_rfc)</a>.
-See commit message for more implementation specific details.</p></li><li><p>In a similar vein to <code>AT_FDCWD</code>, add <code>AT_FDROOT</code> which causes relative and
-absolute paths to get interpreted relative to &ldquo;/&rdquo;.</p><p><strong>Use-Case:</strong> When writing code that either operates on the host filesystem or
-on a root directory, if you want to use <code>AT_FDCWD</code> to indicate the host
-filesystem, you have to use absolute paths to make sure they&rsquo;re not
-interpreted relative to the current working directory. However, when passing
-absolute paths to any of the at() system calls, any provided directory file
-descriptor is ignored. Ideally, when writing this kind of code, we&rsquo;d be able
-to use relative paths everywhere and have <code>AT_FDROOT</code> available to specify
-that a path is relative to the host filesystem.</p></li><li><p>Add <code>AT_EMPTY_PATH</code> support for unlinkat().</p><p><strong>Use-Case:</strong> When dealing with files/directories, allow passing around only a
+See commit message for more implementation specific details.</p></li><li><p>Add <code>AT_EMPTY_PATH</code> support for unlinkat().</p><p><strong>Use-Case:</strong> When dealing with files/directories, allow passing around only a
 file descriptor without having to keep the path around to be able to unlink
-the file/directory.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+the file/directory.</p></li><li><p>Race-free mount of block devices</p><p>Introduce a new struct to <code>fsconfig()</code> as an alternative to the
+<code>source</code> property. The struct contains at least a pointer to a path,
+possibly a device minor and major, and a diskseq number. The VFS can
+expose a helper that filesystems can call and use the diskseq number
+to verify that the block device they are intending to mount is indeed
+the one they want to mount.</p><p><strong>Use-Case:</strong> Race-free mounting of block devices.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
