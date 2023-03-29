@@ -578,3 +578,9 @@ point that out explicitly and clearly in the associated patches and Cc
   descriptor is ignored. Ideally, when writing this kind of code, we'd be able
   to use relative paths everywhere and have `AT_FDROOT` available to specify 
   that a path is relative to the host filesystem.
+
+* Add `AT_EMPTY_PATH` support for unlinkat().
+
+  **Use-Case:** When dealing with files/directories, allow passing around only a
+  file descriptor without having to keep the path around to be able to unlink
+  the file/directory.
