@@ -263,18 +263,6 @@ point that out explicitly and clearly in the associated patches and Cc
   **Use-Case:** `systemd` tracks the mount table to integrate the mounts
   into it own dependency management.
 
-* Ability to to do cross-namespace mounts by file
-  descriptor. Currently preparing a mount point in one namespace and then
-  mounting it via `mount("/proc/self/fd/…", "/somewhere/else", NULL,
-  MS_BIND…)` is prohibited by the kernel.
-
-  **Use-Case:** various programs prepare complex mount hierarchies in
-  private mount namespaces, that they later want to make appear in
-  the host mount namespace fully put together (e.g. `systemd-dissect
-  --mount`). This can currently only be implemented via mount
-  propagation, which however has effects way beyond the installation
-  of the one mount hierarchy that shall be installed.
-
 * An asynchronous or forced `close()`, that guarantees that
   userspace doesn't have to risk blocking for longer periods of time
   when trying to get rid of unwanted file descriptors, possibly
