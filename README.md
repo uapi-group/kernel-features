@@ -263,18 +263,6 @@ point that out explicitly and clearly in the associated patches and Cc
   **Use-Case:** `systemd` tracks the mount table to integrate the mounts
   into it own dependency management.
 
-* Ability to to do cross-namespace mounts by file
-  descriptor. Currently preparing a mount point in one namespace and then
-  mounting it via `mount("/proc/self/fd/…", "/somewhere/else", NULL,
-  MS_BIND…)` is prohibited by the kernel.
-
-  **Use-Case:** various programs prepare complex mount hierarchies in
-  private mount namespaces, that they later want to make appear in
-  the host mount namespace fully put together (e.g. `systemd-dissect
-  --mount`). This can currently only be implemented via mount
-  propagation, which however has effects way beyond the installation
-  of the one mount hierarchy that shall be installed.
-
 * An asynchronous or forced `close()`, that guarantees that
   userspace doesn't have to risk blocking for longer periods of time
   when trying to get rid of unwanted file descriptors, possibly
@@ -444,7 +432,9 @@ point that out explicitly and clearly in the associated patches and Cc
   **Use-Case:** Allow LSMs to make decisions about what mount properties to
   allow and what to deny.
 
-* (kAPI) Add security hook to `create_user_ns()`.
+* [x] (kAPI) Add security hook to `create_user_ns()`.
+
+  **🙇 `7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()")` 🙇**
 
   **Use-Case:** Allow LSMs to monitor user namespace creation.
 
@@ -515,7 +505,9 @@ point that out explicitly and clearly in the associated patches and Cc
   **Use-Case:** Allow mounting images inside nspawn containers, and using
   RootImage= and friends in the systemd user manager.
 
-* Support idmapped mounts for tmpfs
+* [x] Support idmapped mounts for tmpfs
+
+  **🙇 `7a80e5b8c6fa ("shmem: support idmapped mounts for tmpfs")` 🙇**
 
   **Use-Case:** Runtimes such as Kubernetes use a lot of `tmpfs` mounts of
   individual files or directories to expose information to containers/pods.
@@ -567,20 +559,19 @@ point that out explicitly and clearly in the associated patches and Cc
   (https://github.com/quitschbo/linux/tree/devcg_guard_rfc).
   See commit message for more implementation specific details.
 
-* In a similar vein to `AT_FDCWD`, add `AT_FDROOT` which causes relative and 
-  absolute paths to get interpreted relative to "/". 
-
-  **Use-Case:** When writing code that either operates on the host filesystem or
-  on a root directory, if you want to use `AT_FDCWD` to indicate the host 
-  filesystem, you have to use absolute paths to make sure they're not 
-  interpreted relative to the current working directory. However, when passing
-  absolute paths to any of the at() system calls, any provided directory file
-  descriptor is ignored. Ideally, when writing this kind of code, we'd be able
-  to use relative paths everywhere and have `AT_FDROOT` available to specify 
-  that a path is relative to the host filesystem.
-
 * Add `AT_EMPTY_PATH` support for unlinkat().
 
   **Use-Case:** When dealing with files/directories, allow passing around only a
   file descriptor without having to keep the path around to be able to unlink
   the file/directory.
+
+* Race-free mount of block devices
+
+  Introduce a new struct to `fsconfig()` as an alternative to the
+  `source` property. The struct contains at least a pointer to a path,
+  possibly a device minor and major, and a diskseq number. The VFS can
+  expose a helper that filesystems can call and use the diskseq number
+  to verify that the block device they are intending to mount is indeed
+  the one they want to mount.
+
+  **Use-Case:** Race-free mounting of block devices.
