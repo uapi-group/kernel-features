@@ -374,5 +374,7 @@ interpreted relative to the current working directory. However, when passing
 absolute paths to any of the at() system calls, any provided directory file
 descriptor is ignored. Ideally, when writing this kind of code, we&rsquo;d be able
 to use relative paths everywhere and have <code>AT_FDROOT</code> available to specify
-that a path is relative to the host filesystem.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+that a path is relative to the host filesystem.</p></li><li><p>Add <code>AT_EMPTY_PATH</code> support for unlinkat().</p><p><strong>Use-Case:</strong> When dealing with files/directories, allow passing around only a
+file descriptor without having to keep the path around to be able to unlink
+the file/directory.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
