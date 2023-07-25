@@ -575,3 +575,18 @@ point that out explicitly and clearly in the associated patches and Cc
   the one they want to mount.
 
   **Use-Case:** Race-free mounting of block devices.
+
+* Override Name field for programs executed using fexecve
+
+  Right now, when `fexecve`/`execveat` is used,
+  the Name field in `/proc/self/status` contains the fd,
+  which breaks `pc -C …` and various other tools.
+  In particular when the fd was opened with `O_CLOEXEC`,
+  the number of the fd in the old process is completely meaningless.
+
+  The goal is add a way to tell `fexecve`/`execveat` what Name to use.
+
+  See https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294,
+  https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81.
+
+  **Use-Case**: Race-free execution of binaries.
