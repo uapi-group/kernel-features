@@ -643,7 +643,7 @@ point that out explicitly and clearly in the associated patches and Cc
 
   Right now, when `fexecve()`/`execveat()` is used, the `comm` field
   (i.e. `/proc/self/comm`) contains a name derived of the numeric fd,
-  which breaks `pc -C …` and various other tools.  In particular when
+  which breaks `ps -C …` and various other tools.  In particular when
   the fd was opened with `O_CLOEXEC`, the number of the fd in the old
   process is completely meaningless.
 
@@ -657,7 +657,7 @@ point that out explicitly and clearly in the associated patches and Cc
   https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81.
 
   **Usecase:** In systemd we generally would prefer using `fexecve()`
-  to safely and rece-freely invoke processes, but the fact that `comm`
+  to safely and race-freely invoke processes, but the fact that `comm`
   is useless after invoking a process that way makes the call
   unfortunately hard to use for systemd.
 
