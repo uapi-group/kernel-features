@@ -29,6 +29,11 @@ point that out explicitly and clearly in the associated patches and Cc
   mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar
   ```
 
+  (This is of course already possible via some mount namespacing
+  shenanigans, but this requires namespacing to be available, and is
+  not precisely obvious to implement. Explicit kernel support at mount
+  time would be much preferable.)
+
   **Use-Case:** `systemd-homed` currently mounts a sub-directory of
   the per-user LUKS volume as the user's home directory (and not the
   root directory of the per-user LUKS volume's file system!), and in
@@ -585,3 +590,129 @@ point that out explicitly and clearly in the associated patches and Cc
   Overall this has the effect that we're able to open devices early
   giving the user early errors when they set mount options rather than
   very late when the superblock is created.
+
+* When activating a dm-verity volume allow specifying keyring to
+  validate root hash signature against.
+
+  **Usecase:** In systemd, we'd like to authenticate Portable Service
+  images, system extension images, configuration images, container
+  images with different keys, as they typically originate from
+  different sources and it should not be possible to generate a
+  system extension with a key pair that is supposed to be good for
+  container images only.
+
+* Make statx() on a pidfd return additional recognizable identifiers
+  in `.stx_btime` and `.stx_ino`.
+
+  It would be fantastic if issuing statx() on any pidfd would return
+  the start time of the process in `.stx_btime` even after the process
+  died, plus some reasonably stable 64bit identifier for the process
+  in `.stx_ino`. Together these two fields would be perfect to
+  identify processes pinned by a pidfd, and compare them, as the 96++
+  bit of information they expose should be unique enough for the
+  entire lifetime of the system to identify the processes.
+
+  These fields should in particular be queriable *after* the process
+  already exited and has been reaped, i.e. after its PID has already
+  been recycled.
+
+  **Usecase:** In systemd we maintain lists of processes in a hash
+  table. Right now, the key is the PID, but this is less than ideal
+  because of PID recycling. By being able to use the `.stx_btime`
+  and/or `.stx_ino` fields instead would be perfect to safely
+  identify, track and compare process even after they ceased to exist.
+
+* An API to determine the parent process ID (ppid) of a pidfd would be
+  good.
+
+  This information is relevant to code dealing with pidfds, since if
+  the ppid of a pidfd matches the process own pid it can call
+  `waitid()` on the process, if it doesn't it cannot and such a call
+  would fail. It would be very useful if this could be determined
+  easily before even calling that syscall.
+
+  **Usecase:** systemd manages a multitude of processes, most of which
+  are its own children, but many which are not. It would be great if
+  we could easily determine whether it is worth waiting for
+  `SIGCHLD`/`waitid()` on them or whether waiting for `POLLIN` on
+  them is the only way to get exit notification.
+
+
+* There should be a way to control the process' `comm` field if
+  started via `fexecve()`.
+
+  Right now, when `fexecve()`/`execveat()` is used, the `comm` field
+  (i.e. `/proc/self/comm`) contains a name derived of the numeric fd,
+  which breaks `pc -C …` and various other tools.  In particular when
+  the fd was opened with `O_CLOEXEC`, the number of the fd in the old
+  process is completely meaningless.
+
+  The goal is add a way to tell `fexecve()`/`execveat()` what Name to use.
+
+  Since `comm` is under user control anyway (via `PR_SET_NAME`), it
+  should be safe to also make it somehow configurable at fexecve()
+  time.
+
+  See https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294,
+  https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81.
+
+  **Usecase:** In systemd we generally would prefer using `fexecve()`
+  to safely and rece-freely invoke processes, but the fact that `comm`
+  is useless after invoking a process that way makes the call
+  unfortunately hard to use for systemd.
+
+* The LSM module API should have the ability to do path-based (not
+  just inode-based) ACL management.
+
+  **Usecase:** This would be useful in BPF-LSM modules such as
+  systemd's `mntfsd` which allows unprivileged file system mounts in
+  some cases, and which would like to restrict ACL handling based on
+  the superblock involved.
+
+* `overlayfs` should permit *immutable* layers, i.e. layers whose
+  non-directory inodes may not be overriden in an upper writable
+  layer.
+
+  **Usecase:** This would be useful when implementing `/etc/` as a
+  stack of overlayfs layers, each shipping configuration for a
+  different facet of the system, with a writable layer on the top for
+  local modifications. In such a scenario it would be useful to allow
+  the user to change any configuration it likes, except of the files
+  and other inodes shipped in the lower layers.
+
+* `overlayfs` should have an `ioctl()`-based API (or similar) for
+  querying information of the backing file systems/block devices
+
+  **Usecase:** In systemd in various areas we automatically find the
+  block device backing the root file system and other file systems
+  (Example: `systemd-gpt-auto-generator` or `bootctl` wull try to find
+  auxiliary file systems of the OS image by looking in the GPT
+  partition table the root file system is located in). While this
+  logic is good enough to find the backing block devices of some more
+  complex storage such as dm-crypt, dm-verity or btrfs, once
+  `overlayfs` is used as backing for the root file system this logic
+  does not work anymore. It would be great if there was an API to
+  simply query `overlayfs` for the superblock information
+  (i.e. `.st_dev`) of the backing layers.
+
+* An *auto-grow* feature in `btrfs` would be excellent.
+
+  If such a mode is enabled, `btrfs` would automatically grow a file
+  system up to the size of its backing block devices. Example: btrfs
+  is created with 200M in size on a block device 2G in size. Once the
+  file system is filled up fully, `btrfs` would automatically grow the
+  file system as need in the increments it needs, up to the 2G that
+  the backing block device is in size.
+
+  **Usecase:** This would allow creating minimal, compact file
+  systems: just create them small on a sparse block device, and copy
+  files into it, as needed, create subvolumes and whatever else is
+  desired. As long as only files are created and written (but not
+  modified) the resulting fs should be automatically minimal in size.
+  This would specifically be useful in `systemd-homed`, which
+  maintains per-user `btrfs` file systems backed by block
+  devices. Currently, `homed` grows the file systems manually on login
+  and then shrinks them again on logout, but this is less than ideal,
+  since btrfs places files all over the backing store, and thus the
+  shrinking will generate a lot of nonsensical IO that could be
+  reduced if the file system was always kept minimal in size anyway.
