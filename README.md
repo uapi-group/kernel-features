@@ -29,6 +29,11 @@ point that out explicitly and clearly in the associated patches and Cc
   mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar
   ```
 
+  (This is of course already possible via some mount namespacing
+  shenanigans, but this requires namespacing to be available, and is
+  not precisely obvious to implement. Explicit kernel support at mount
+  time would be much preferable.)
+
   **Use-Case:** `systemd-homed` currently mounts a sub-directory of
   the per-user LUKS volume as the user's home directory (and not the
   root directory of the per-user LUKS volume's file system!), and in
