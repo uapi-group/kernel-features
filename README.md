@@ -718,3 +718,21 @@ point that out explicitly and clearly in the associated patches and Cc
   since btrfs places files all over the backing store, and thus the
   shrinking will generate a lot of nonsensical IO that could be
   reduced if the file system was always kept minimal in size anyway.
+
+* Add process by PIDFD to a cgroup
+
+  At the moment the canonical way to add a process to a cgroup is by
+  echoing its PID into the `cgroup.procs` attribute in the target
+  cgroupfs directory of the cgroup. This is safe as long as the
+  process doing so just forked off the process it wants to migrate and
+  hence can control that it hasn't been reaped yet, and hence
+  guarantees the PID is valid. This is racy however if "foreign"
+  processes shall be moved into the cgroup.
+
+  **Usecase:** In systemd, all user sessions are wrapped in scope
+  units which are backed by a cgroup. The session processes moved into
+  the scope unit are typically "foreign" processes, i.e. not children
+  of the service manager, hence doing the movement is subject to races
+  in case the process dies and its PID is quickly recycled. (This
+  assumes systemd can acquire a pidfd of the foreign process without
+  races, for example via `SCM_PIDFD` and `SO_PEERPIDFD` or similar.)
