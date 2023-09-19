@@ -367,5 +367,13 @@ the file/directory.</p></li><li><p>Race-free mount of block devices</p><p>Introd
 possibly a device minor and major, and a diskseq number. The VFS can
 expose a helper that filesystems can call and use the diskseq number
 to verify that the block device they are intending to mount is indeed
-the one they want to mount.</p><p><strong>Use-Case:</strong> Race-free mounting of block devices.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+the one they want to mount.</p><p><strong>Use-Case:</strong> Race-free mounting of block devices.</p></li><li><p>Add ability to reopen a <code>struct block_device</code>. This would allow using
+<code>blkdev_get_by_path()</code>/<code>blkdev_get_{part,whole}()</code> to claim a device
+with <code>BLK_OPEN_READ</code> and later on reopen with
+<code>BLK_OPEN_READ | BLK_OPEN_WRITE</code>. This in turn would opening block
+devices at <code>fsconfig(FS_CONFIG_SET_*)</code> time and then at <code>fill_super()</code>
+time we would be able to reopen in case the <code>!(fc->sb_flags & SB_RDONLY)</code>.
+Overall this has the effect that we&rsquo;re able to open devices early
+giving the user early errors when they set mount options rather than
+very late when the superblock is created.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
