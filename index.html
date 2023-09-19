@@ -20,7 +20,10 @@ removed. One such software would be <code>systemd-sysext</code>.</p></li><li><p>
 the top-level directory. i.e. for a file system <code>/dev/sda1</code> which
 contains a sub-directory <code>/foobar</code> mount <code>/foobar</code> without having
 to mount its parent directory first. Consider something like this:</p><pre tabindex=0><code>mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar
-</code></pre><p><strong>Use-Case:</strong> <code>systemd-homed</code> currently mounts a sub-directory of
+</code></pre><p>(This is of course already possible via some mount namespacing
+shenanigans, but this requires namespacing to be available, and is
+not precisely obvious to implement. Explicit kernel support at mount
+time would be much preferable.)</p><p><strong>Use-Case:</strong> <code>systemd-homed</code> currently mounts a sub-directory of
 the per-user LUKS volume as the user&rsquo;s home directory (and not the
 root directory of the per-user LUKS volume&rsquo;s file system!), and in
 order to implement this invisibly from the host side requires a
@@ -375,5 +378,83 @@ devices at <code>fsconfig(FS_CONFIG_SET_*)</code> time and then at <code>fill_su
 time we would be able to reopen in case the <code>!(fc->sb_flags & SB_RDONLY)</code>.
 Overall this has the effect that we&rsquo;re able to open devices early
 giving the user early errors when they set mount options rather than
-very late when the superblock is created.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+very late when the superblock is created.</p></li><li><p>When activating a dm-verity volume allow specifying keyring to
+validate root hash signature against.</p><p><strong>Usecase:</strong> In systemd, we&rsquo;d like to authenticate Portable Service
+images, system extension images, configuration images, container
+images with different keys, as they typically originate from
+different sources and it should not be possible to generate a
+system extension with a key pair that is supposed to be good for
+container images only.</p></li><li><p>Make statx() on a pidfd return additional recognizable identifiers
+in <code>.stx_btime</code> and <code>.stx_ino</code>.</p><p>It would be fantastic if issuing statx() on any pidfd would return
+the start time of the process in <code>.stx_btime</code> even after the process
+died, plus some reasonably stable 64bit identifier for the process
+in <code>.stx_ino</code>. Together these two fields would be perfect to
+identify processes pinned by a pidfd, and compare them, as the 96++
+bit of information they expose should be unique enough for the
+entire lifetime of the system to identify the processes.</p><p>These fields should in particular be queriable <em>after</em> the process
+already exited and has been reaped, i.e. after its PID has already
+been recycled.</p><p><strong>Usecase:</strong> In systemd we maintain lists of processes in a hash
+table. Right now, the key is the PID, but this is less than ideal
+because of PID recycling. By being able to use the <code>.stx_btime</code>
+and/or <code>.stx_ino</code> fields instead would be perfect to safely
+identify, track and compare process even after they ceased to exist.</p></li><li><p>An API to determine the parent process ID (ppid) of a pidfd would be
+good.</p><p>This information is relevant to code dealing with pidfds, since if
+the ppid of a pidfd matches the process own pid it can call
+<code>waitid()</code> on the process, if it doesn&rsquo;t it cannot and such a call
+would fail. It would be very useful if this could be determined
+easily before even calling that syscall.</p><p><strong>Usecase:</strong> systemd manages a multitude of processes, most of which
+are its own children, but many which are not. It would be great if
+we could easily determine whether it is worth waiting for
+<code>SIGCHLD</code>/<code>waitid()</code> on them or whether waiting for <code>POLLIN</code> on
+them is the only way to get exit notification.</p></li><li><p>There should be a way to control the process&rsquo; <code>comm</code> field if
+started via <code>fexecve()</code>.</p><p>Right now, when <code>fexecve()</code>/<code>execveat()</code> is used, the <code>comm</code> field
+(i.e. <code>/proc/self/comm</code>) contains a name derived of the numeric fd,
+which breaks <code>pc -C …</code> and various other tools. In particular when
+the fd was opened with <code>O_CLOEXEC</code>, the number of the fd in the old
+process is completely meaningless.</p><p>The goal is add a way to tell <code>fexecve()</code>/<code>execveat()</code> what Name to use.</p><p>Since <code>comm</code> is under user control anyway (via <code>PR_SET_NAME</code>), it
+should be safe to also make it somehow configurable at fexecve()
+time.</p><p>See
+<a href=https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294>https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294</a>,
+<a href=https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81>https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81</a>.</p><p><strong>Usecase:</strong> In systemd we generally would prefer using <code>fexecve()</code>
+to safely and rece-freely invoke processes, but the fact that <code>comm</code>
+is useless after invoking a process that way makes the call
+unfortunately hard to use for systemd.</p></li><li><p>The LSM module API should have the ability to do path-based (not
+just inode-based) ACL management.</p><p><strong>Usecase:</strong> This would be useful in BPF-LSM modules such as
+systemd&rsquo;s <code>mntfsd</code> which allows unprivileged file system mounts in
+some cases, and which would like to restrict ACL handling based on
+the superblock involved.</p></li><li><p><code>overlayfs</code> should permit <em>immutable</em> layers, i.e. layers whose
+non-directory inodes may not be overriden in an upper writable
+layer.</p><p><strong>Usecase:</strong> This would be useful when implementing <code>/etc/</code> as a
+stack of overlayfs layers, each shipping configuration for a
+different facet of the system, with a writable layer on the top for
+local modifications. In such a scenario it would be useful to allow
+the user to change any configuration it likes, except of the files
+and other inodes shipped in the lower layers.</p></li><li><p><code>overlayfs</code> should have an <code>ioctl()</code>-based API (or similar) for
+querying information of the backing file systems/block devices</p><p><strong>Usecase:</strong> In systemd in various areas we automatically find the
+block device backing the root file system and other file systems
+(Example: <code>systemd-gpt-auto-generator</code> or <code>bootctl</code> wull try to find
+auxiliary file systems of the OS image by looking in the GPT
+partition table the root file system is located in). While this
+logic is good enough to find the backing block devices of some more
+complex storage such as dm-crypt, dm-verity or btrfs, once
+<code>overlayfs</code> is used as backing for the root file system this logic
+does not work anymore. It would be great if there was an API to
+simply query <code>overlayfs</code> for the superblock information
+(i.e. <code>.st_dev</code>) of the backing layers.</p></li><li><p>An <em>auto-grow</em> feature in <code>btrfs</code> would be excellent.</p><p>If such a mode is enabled, <code>btrfs</code> would automatically grow a file
+system up to the size of its backing block devices. Example: btrfs
+is created with 200M in size on a block device 2G in size. Once the
+file system is filled up fully, <code>btrfs</code> would automatically grow the
+file system as need in the increments it needs, up to the 2G that
+the backing block device is in size.</p><p><strong>Usecase:</strong> This would allow creating minimal, compact file
+systems: just create them small on a sparse block device, and copy
+files into it, as needed, create subvolumes and whatever else is
+desired. As long as only files are created and written (but not
+modified) the resulting fs should be automatically minimal in size.
+This would specifically be useful in <code>systemd-homed</code>, which
+maintains per-user <code>btrfs</code> file systems backed by block
+devices. Currently, <code>homed</code> grows the file systems manually on login
+and then shrinks them again on logout, but this is less than ideal,
+since btrfs places files all over the backing store, and thus the
+shrinking will generate a lot of nonsensical IO that could be
+reduced if the file system was always kept minimal in size anyway.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
