@@ -409,14 +409,14 @@ we could easily determine whether it is worth waiting for
 them is the only way to get exit notification.</p></li><li><p>There should be a way to control the process&rsquo; <code>comm</code> field if
 started via <code>fexecve()</code>.</p><p>Right now, when <code>fexecve()</code>/<code>execveat()</code> is used, the <code>comm</code> field
 (i.e. <code>/proc/self/comm</code>) contains a name derived of the numeric fd,
-which breaks <code>pc -C …</code> and various other tools. In particular when
+which breaks <code>ps -C …</code> and various other tools. In particular when
 the fd was opened with <code>O_CLOEXEC</code>, the number of the fd in the old
 process is completely meaningless.</p><p>The goal is add a way to tell <code>fexecve()</code>/<code>execveat()</code> what Name to use.</p><p>Since <code>comm</code> is under user control anyway (via <code>PR_SET_NAME</code>), it
 should be safe to also make it somehow configurable at fexecve()
 time.</p><p>See
 <a href=https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294>https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294</a>,
 <a href=https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81>https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81</a>.</p><p><strong>Usecase:</strong> In systemd we generally would prefer using <code>fexecve()</code>
-to safely and rece-freely invoke processes, but the fact that <code>comm</code>
+to safely and race-freely invoke processes, but the fact that <code>comm</code>
 is useless after invoking a process that way makes the call
 unfortunately hard to use for systemd.</p></li><li><p>The LSM module API should have the ability to do path-based (not
 just inode-based) ACL management.</p><p><strong>Usecase:</strong> This would be useful in BPF-LSM modules such as
