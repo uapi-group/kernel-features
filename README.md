@@ -72,9 +72,11 @@ point that out explicitly and clearly in the associated patches and Cc
   log and immediately exit, the cgroup information frequently cannot
   be acquired anymore by `systemd-journald`.
 
-* `SCM_PIDFD` or similar auxiliary socket message, that is a modern
+* [x] `SCM_PIDFD` or similar auxiliary socket message, that is a modern
   version of the `SCM_CREDS` message's `.pid` field, and provides a
   `pidfd` file descriptor to the originating peer process.
+
+  **🙇 `5e2ff6704a275be00 ("scm: add SO_PASSPIDFD and SCM_PIDFD)")` 🙇**
 
   **Use-Case:** security infrastructure (such as PolicyKit) can safely
   reference clients this way without fearing PID
