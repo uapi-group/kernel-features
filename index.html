@@ -52,9 +52,9 @@ log messages of service X!&rdquo; can be answered). This is currently
 racy, since it uses <code>SCM_CREDS</code>&rsquo; <code>.pid</code> field for this, which it then
 used to load <code>/proc/$PID/cgroup</code>. In particular for programs that
 log and immediately exit, the cgroup information frequently cannot
-be acquired anymore by <code>systemd-journald</code>.</p></li><li><p><code>SCM_PIDFD</code> or similar auxiliary socket message, that is a modern
+be acquired anymore by <code>systemd-journald</code>.</p></li><li><p><input checked disabled type=checkbox> <code>SCM_PIDFD</code> or similar auxiliary socket message, that is a modern
 version of the <code>SCM_CREDS</code> message&rsquo;s <code>.pid</code> field, and provides a
-<code>pidfd</code> file descriptor to the originating peer process.</p><p><strong>Use-Case:</strong> security infrastructure (such as PolicyKit) can safely
+<code>pidfd</code> file descriptor to the originating peer process.</p><p><strong>🙇 <code>5e2ff6704a275be00 ("scm: add SO_PASSPIDFD and SCM_PIDFD)")</code> 🙇</strong></p><p><strong>Use-Case:</strong> security infrastructure (such as PolicyKit) can safely
 reference clients this way without fearing PID
 recycling. <code>systemd-journald</code> can acquire peer metadata this way in
 a less racy fashion, in particular safe against PID recycling.</p></li><li><p>Ability to link an <code>O_TMPFILE</code> file into a directory while <em>replacing</em> an
