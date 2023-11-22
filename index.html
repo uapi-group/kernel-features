@@ -456,5 +456,17 @@ devices. Currently, <code>homed</code> grows the file systems manually on login
 and then shrinks them again on logout, but this is less than ideal,
 since btrfs places files all over the backing store, and thus the
 shrinking will generate a lot of nonsensical IO that could be
-reduced if the file system was always kept minimal in size anyway.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+reduced if the file system was always kept minimal in size anyway.</p></li><li><p>Add process by PIDFD to a cgroup</p><p>At the moment the canonical way to add a process to a cgroup is by
+echoing its PID into the <code>cgroup.procs</code> attribute in the target
+cgroupfs directory of the cgroup. This is safe as long as the
+process doing so just forked off the process it wants to migrate and
+hence can control that it hasn&rsquo;t been reaped yet, and hence
+guarantees the PID is valid. This is racy however if &ldquo;foreign&rdquo;
+processes shall be moved into the cgroup.</p><p><strong>Usecase:</strong> In systemd, all user sessions are wrapped in scope
+units which are backed by a cgroup. The session processes moved into
+the scope unit are typically &ldquo;foreign&rdquo; processes, i.e. not children
+of the service manager, hence doing the movement is subject to races
+in case the process dies and its PID is quickly recycled. (This
+assumes systemd can acquire a pidfd of the foreign process without
+races, for example via <code>SCM_PIDFD</code> and <code>SO_PEERPIDFD</code> or similar.)</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
