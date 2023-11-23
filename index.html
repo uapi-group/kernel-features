@@ -468,5 +468,32 @@ the scope unit are typically &ldquo;foreign&rdquo; processes, i.e. not children
 of the service manager, hence doing the movement is subject to races
 in case the process dies and its PID is quickly recycled. (This
 assumes systemd can acquire a pidfd of the foreign process without
-races, for example via <code>SCM_PIDFD</code> and <code>SO_PEERPIDFD</code> or similar.)</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+races, for example via <code>SCM_PIDFD</code> and <code>SO_PEERPIDFD</code> or similar.)</p></li><li><p>Ability to put user xattrs on <code>S_IFSOCK</code> socket inodes</p><p>Currently, the kernel only allows extended attributes in the
+<code>user.*</code> namespace to be attached to directory and regular file
+inodes. It would be tremendously useful to allow them to be
+associated with socket inodes, too.</p><p><strong>Usecase:</strong> There are two syslog RFCs in use today: RFC3164 and
+RFC5424. <code>glibc</code>&rsquo;s <code>syslog()</code> API generates events close to the
+former, but there are programs which would like to generate the
+latter instead (as it supports structured logging). The two formats
+are not backwards compatible: a client sending RFC5424 messages to a
+server only understanding RFC3164 will cause an ugly mess. On Linux
+there&rsquo;s only a single <code>/dev/log</code> AF_UNIX/SOCK_DGRAM socket backing
+<code>syslog()</code>, which is used in a one-way, fire-and-forget style. This
+means that feature negotation is not really possible within the
+protocol. Various tools bind mount the socket inode into <code>chroot()</code>
+and container environments, hence it would be fantastic to associate
+supported feature information directly with the inode (and thus
+outside of the protocol) to make it easy for clients to determine
+which features are spoken on a socket, in a way that survives bind
+mounts. Implementation idea would be that syslog daemons
+implementing RFC5425 could simply set an xattr <code>user.rfc5424</code> to <code>1</code>
+(or something like that) on the socket inode, and clearly inform
+clients in a natural and simple way that they&rsquo;d be happy to parse
+the newer format. Also see:
+<a href=https://github.com/systemd/systemd/issues/19251>https://github.com/systemd/systemd/issues/19251</a> – This idea could
+also be extended to other sockets and other protocols: by setting
+some extended attribute on a socket inodes, services could advertise
+which protocols they support on them. For example D-Bus sockets
+could carry <code>user.dbus</code> set to <code>1</code>, and Varlink sockets
+<code>user.varlink</code> set to <code>1</code> and so on.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
 <span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
