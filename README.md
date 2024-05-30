@@ -10,9 +10,14 @@ associated problem space.
 point that out explicitly and clearly in the associated patches and Cc
 `Christian Brauner <brauner (at) kernel (dot) org`.**
 
-* Ability to unmount obstructed mounts. (This means: you have a stack
+* [x] Ability to unmount obstructed mounts. (This means: you have a stack
   of mounts on the very same inode, and you want to remove a mount in
   the middle. Right now, you can only remove the topmost mount.)
+
+  **🙇 Instead of the ability to unmount obstructured mounts we gained
+  the ability to mount beneath an existing mount, with mostly
+  equivalent outcome. `6ac392815628f317fcfdca1a39df00b9cc4ebc8b
+  ("fs: allow to mount beneath top mount") 🙇**
 
   **Use-Case:** this is useful for replacing mounts atomically, for
   example for upgrading versioned disk images: first an old version
@@ -110,10 +115,13 @@ point that out explicitly and clearly in the associated patches and Cc
   pointed to `file://dev/zero`, not expecting an endless amount of
   data to read.
 
-* `IP_UNICAST_IF` should be taken into account for routing decisions
+* [x] `IP_UNICAST_IF` should be taken into account for routing decisions
   at UDP `connect()` time (currently it isn't, only `SO_BINDTOINDEX`
   is, but that does so much more than just that, and one often
   doesn't want that)
+
+  **🙇 `0e4d354762cefd3e16b4cff8988ff276e45effc4 ("net-next: Fix
+  IP_UNICAST_IF option behavior for connected sockets")` 🙇**
 
   **Use-Case:** DNS resolvers that associate DNS configuration with
   specific network interfaces (example: `systemd-resolved`) typically
@@ -346,8 +354,10 @@ point that out explicitly and clearly in the associated patches and Cc
   **Use-Case:** block services or containers from re-opening/upgrading an
   `O_PATH` file descriptor through e.g. `/proc/<pid>/fd/<nr` as `O_WRONLY`.
 
-* Implement a mount-specific companion to `statx()` that puts at least the
+* [x] Implement a mount-specific companion to `statx()` that puts at least the
   following information into `struct mount_info`:
+
+  **🙇 46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 ("add statmount(2) syscall")`` 🙇**
 
   * mount flags: `MOUNT_ATTR_RDONLY`, ...
   * time flags: `MOUNT_ATTR_RELATIME`, ...
@@ -603,8 +613,10 @@ point that out explicitly and clearly in the associated patches and Cc
   system extension with a key pair that is supposed to be good for
   container images only.
 
-* Make statx() on a pidfd return additional recognizable identifiers
+* [x] Make statx() on a pidfd return additional recognizable identifiers
   in `.stx_btime` and `.stx_ino`.
+
+  **🙇 `cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs` 🙇**
 
   It would be fantastic if issuing statx() on any pidfd would return
   the start time of the process in `.stx_btime` even after the process
@@ -638,7 +650,6 @@ point that out explicitly and clearly in the associated patches and Cc
   we could easily determine whether it is worth waiting for
   `SIGCHLD`/`waitid()` on them or whether waiting for `POLLIN` on
   them is the only way to get exit notification.
-
 
 * There should be a way to control the process' `comm` field if
   started via `fexecve()`.
