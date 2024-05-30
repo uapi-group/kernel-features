@@ -10,9 +10,12 @@ on this list as being implementation requests. Some of the ideas on this list
 are rather rough and unrefined. They serve as entry points for exploring the
 associated problem space.</p><p><strong>When implementing ideas on this list or ideas inspired by this list please
 point that out explicitly and clearly in the associated patches and Cc
-<code>Christian Brauner &lt;brauner (at) kernel (dot) org</code>.</strong></p><ul><li><p>Ability to unmount obstructed mounts. (This means: you have a stack
+<code>Christian Brauner &lt;brauner (at) kernel (dot) org</code>.</strong></p><ul><li><p><input checked disabled type=checkbox> Ability to unmount obstructed mounts. (This means: you have a stack
 of mounts on the very same inode, and you want to remove a mount in
-the middle. Right now, you can only remove the topmost mount.)</p><p><strong>Use-Case:</strong> this is useful for replacing mounts atomically, for
+the middle. Right now, you can only remove the topmost mount.)</p><p><strong>🙇 Instead of the ability to unmount obstructured mounts we gained
+the ability to mount beneath an existing mount, with mostly
+equivalent outcome. `6ac392815628f317fcfdca1a39df00b9cc4ebc8b
+(&ldquo;fs: allow to mount beneath top mount&rdquo;) 🙇</strong></p><p><strong>Use-Case:</strong> this is useful for replacing mounts atomically, for
 example for upgrading versioned disk images: first an old version
 of the image is mounted. Then a new version is mounted over the
 existing mount point, and then the lower mount point is
@@ -76,10 +79,10 @@ FIFOs) come with blocking I/O (or even blocking <code>open()</code>!) by
 default, which is not expected from regular files backed by &ldquo;fast&rdquo;
 disk I/O. Consider implementation of a naive web browser which is
 pointed to <code>file://dev/zero</code>, not expecting an endless amount of
-data to read.</p></li><li><p><code>IP_UNICAST_IF</code> should be taken into account for routing decisions
+data to read.</p></li><li><p><input checked disabled type=checkbox> <code>IP_UNICAST_IF</code> should be taken into account for routing decisions
 at UDP <code>connect()</code> time (currently it isn&rsquo;t, only <code>SO_BINDTOINDEX</code>
 is, but that does so much more than just that, and one often
-doesn&rsquo;t want that)</p><p><strong>Use-Case:</strong> DNS resolvers that associate DNS configuration with
+doesn&rsquo;t want that)</p><p><strong>🙇 <code>0e4d354762cefd3e16b4cff8988ff276e45effc4 ("net-next: Fix IP_UNICAST_IF option behavior for connected sockets")</code> 🙇</strong></p><p><strong>Use-Case:</strong> DNS resolvers that associate DNS configuration with
 specific network interfaces (example: <code>systemd-resolved</code>) typically
 want to preferably route DNS traffic to the per-interface DNS
 server via that interface, but not make further restrictions on the
@@ -242,8 +245,8 @@ whose attributes cannot be changed by the caller don&rsquo;t want
 <code>mount_settattr()</code> to fail on the first mount it failed to convert. Give
 them a flag to request changes ignoring failures.</p></li><li><p>Add upgrade masks to <code>openat2()</code>. Extend <code>struct open_how</code> to allow
 restrict re-opening of file descriptors.</p><p><strong>Use-Case:</strong> block services or containers from re-opening/upgrading an
-<code>O_PATH</code> file descriptor through e.g. <code>/proc/&lt;pid>/fd/&lt;nr</code> as <code>O_WRONLY</code>.</p></li><li><p>Implement a mount-specific companion to <code>statx()</code> that puts at least the
-following information into <code>struct mount_info</code>:</p><ul><li>mount flags: <code>MOUNT_ATTR_RDONLY</code>, &mldr;</li><li>time flags: <code>MOUNT_ATTR_RELATIME</code>, &mldr;
+<code>O_PATH</code> file descriptor through e.g. <code>/proc/&lt;pid>/fd/&lt;nr</code> as <code>O_WRONLY</code>.</p></li><li><p><input checked disabled type=checkbox> Implement a mount-specific companion to <code>statx()</code> that puts at least the
+following information into <code>struct mount_info</code>:</p><p><strong>🙇 46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 (&ldquo;add statmount(2) syscall&rdquo;)`` 🙇</strong></p><ul><li>mount flags: <code>MOUNT_ATTR_RDONLY</code>, &mldr;</li><li>time flags: <code>MOUNT_ATTR_RELATIME</code>, &mldr;
 Could probably be combined with mount flags.</li><li>propagation setting: <code>MS_SHARED)</code>, &mldr;</li><li>peer group</li><li>mnt id of the mount</li><li>mnt id of the mount&rsquo;s parent</li><li>owning userns</li></ul><p>There&rsquo;s a bit more advanced stuff systemd would really want but which
 I think is misplaced in a mountinfo system call including:</p><ul><li>list of primary and auxiliary block device major/minor</li><li>diskseq value of those device nodes (This is a new block device feature
 we added that allows preventing device recycling issues when e.g.
@@ -384,8 +387,8 @@ images, system extension images, configuration images, container
 images with different keys, as they typically originate from
 different sources and it should not be possible to generate a
 system extension with a key pair that is supposed to be good for
-container images only.</p></li><li><p>Make statx() on a pidfd return additional recognizable identifiers
-in <code>.stx_btime</code> and <code>.stx_ino</code>.</p><p>It would be fantastic if issuing statx() on any pidfd would return
+container images only.</p></li><li><p><input checked disabled type=checkbox> Make statx() on a pidfd return additional recognizable identifiers
+in <code>.stx_btime</code> and <code>.stx_ino</code>.</p><p><strong>🙇 <code>cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs</code> 🙇</strong></p><p>It would be fantastic if issuing statx() on any pidfd would return
 the start time of the process in <code>.stx_btime</code> even after the process
 died, plus some reasonably stable 64bit identifier for the process
 in <code>.stx_ino</code>. Together these two fields would be perfect to
