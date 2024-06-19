@@ -452,7 +452,12 @@ also be extended to other sockets and other protocols: by setting
 some extended attribute on a socket inodes, services could advertise
 which protocols they support on them. For example D-Bus sockets
 could carry <code>user.dbus</code> set to <code>1</code>, and Varlink sockets
-<code>user.varlink</code> set to <code>1</code> and so on.</p></li></ul><h2 id=finished-items>Finished Items
+<code>user.varlink</code> set to <code>1</code> and so on.</p></li><li><p>Extend <code>pidfd_open()</code> to allow opening the thread-group leader based on the
+PID of an individual thread. Currently we do support:</p><p>(1) <code>pidfd_open(1234, 0)</code> on a thread-group leader PID
+(2] <code>pidfd_open(1234, PIDFD_THREAD)</code> on a thread</p><p>Add an option to go from individual thread to thread-group leader.</p><p><strong>Use-Case:</strong> Allow for a race free way to go from individual thread to
+thread-group leader pidfd.</p></li><li><p>Add a namespace ioctl to translate a PID between PID namespaces.</p><p><strong>Use-Case:</strong> This makes it possible to e.g., figure out what a given PID in
+a PID namespace corresponds to in the caller&rsquo;s PID namespace. For example, to
+figure out what the PID of PID 1 inside of a given PID namespace is.</p></li></ul><h2 id=finished-items>Finished Items
 <a class=anchor href=#finished-items>#</a></h2><ul><li><p><input checked disabled type=checkbox> ability to unmount obstructed mounts. (this means: you have a stack
 of mounts on the very same inode, and you want to remove a mount in
 the middle. right now, you can only remove the topmost mount.)</p><p><strong>🙇 instead of the ability to unmount obstructured mounts we gained
