@@ -10,21 +10,6 @@ associated problem space.
 point that out explicitly and clearly in the associated patches and Cc
 `Christian Brauner <brauner (at) kernel (dot) org`.**
 
-* [x] Ability to unmount obstructed mounts. (This means: you have a stack
-  of mounts on the very same inode, and you want to remove a mount in
-  the middle. Right now, you can only remove the topmost mount.)
-
-  **🙇 Instead of the ability to unmount obstructured mounts we gained
-  the ability to mount beneath an existing mount, with mostly
-  equivalent outcome. `6ac392815628f317fcfdca1a39df00b9cc4ebc8b
-  ("fs: allow to mount beneath top mount") 🙇**
-
-  **Use-Case:** this is useful for replacing mounts atomically, for
-  example for upgrading versioned disk images: first an old version
-  of the image is mounted. Then a new version is mounted over the
-  existing mount point, and then the lower mount point is
-  removed. One such software would be `systemd-sysext`.
-
 * Ability to mount sub-directories of regular file systems instead of
   the top-level directory. i.e. for a file system `/dev/sda1` which
   contains a sub-directory `/foobar` mount `/foobar` without having
@@ -77,17 +62,6 @@ point that out explicitly and clearly in the associated patches and Cc
   log and immediately exit, the cgroup information frequently cannot
   be acquired anymore by `systemd-journald`.
 
-* [x] `SCM_PIDFD` or similar auxiliary socket message, that is a modern
-  version of the `SCM_CREDS` message's `.pid` field, and provides a
-  `pidfd` file descriptor to the originating peer process.
-
-  **🙇 `5e2ff6704a275be00 ("scm: add SO_PASSPIDFD and SCM_PIDFD)")` 🙇**
-
-  **Use-Case:** security infrastructure (such as PolicyKit) can safely
-  reference clients this way without fearing PID
-  recycling. `systemd-journald` can acquire peer metadata this way in
-  a less racy fashion, in particular safe against PID recycling.
-
 * Ability to link an `O_TMPFILE` file into a directory while *replacing* an
   existing file. (Currently there's only the ability to link it in, if the
   file name doesn't exist yet.)
@@ -114,23 +88,6 @@ point that out explicitly and clearly in the associated patches and Cc
   disk I/O. Consider implementation of a naive web browser which is
   pointed to `file://dev/zero`, not expecting an endless amount of
   data to read.
-
-* [x] `IP_UNICAST_IF` should be taken into account for routing decisions
-  at UDP `connect()` time (currently it isn't, only `SO_BINDTOINDEX`
-  is, but that does so much more than just that, and one often
-  doesn't want that)
-
-  **🙇 `0e4d354762cefd3e16b4cff8988ff276e45effc4 ("net-next: Fix
-  IP_UNICAST_IF option behavior for connected sockets")` 🙇**
-
-  **Use-Case:** DNS resolvers that associate DNS configuration with
-  specific network interfaces (example: `systemd-resolved`) typically
-  want to preferably route DNS traffic to the per-interface DNS
-  server via that interface, but not make further restrictions on the
-  origins or received replies, and all that without
-  privileges. `IP_UNICAST_IF` fulfills this role fine for TCP, but
-  for UDP it is not taken into account for the `connect()` routing
-  decision.
 
 * `unlinkat3(dir_fd, name, inode_fd)`: taking one file descriptor
   for the directory to remove a file in, and another one referring
@@ -354,33 +311,6 @@ point that out explicitly and clearly in the associated patches and Cc
   **Use-Case:** block services or containers from re-opening/upgrading an
   `O_PATH` file descriptor through e.g. `/proc/<pid>/fd/<nr` as `O_WRONLY`.
 
-* [x] Implement a mount-specific companion to `statx()` that puts at least the
-  following information into `struct mount_info`:
-
-  **🙇 46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 ("add statmount(2) syscall")`` 🙇**
-
-  * mount flags: `MOUNT_ATTR_RDONLY`, ...
-  * time flags: `MOUNT_ATTR_RELATIME`, ...
-    Could probably be combined with mount flags.
-  * propagation setting: `MS_SHARED)`, ...
-  * peer group
-  * mnt id of the mount
-  * mnt id of the mount's parent
-  * owning userns
-
-  There's a bit more advanced stuff systemd would really want but which
-  I think is misplaced in a mountinfo system call including:
-  * list of primary and auxiliary block device major/minor
-  * diskseq value of those device nodes (This is a new block device feature
-    we added that allows preventing device recycling issues when e.g.
-    removing usb devices very quickly and is needed for udev.)
-  * uuid/fsid
-  * feature flags (`O_TMPFILE`, `RENAME_EXCHANGE` supported etc.)
-
-  **Use-Case:** low-level userspace tools have to interact with advanced
-  mount information constantly. This is currently costly and brittel because
-  they have to go and parse `/proc/<pid>/mountinfo`.
-
 * Make quotas work with user namespaces. The quota codepaths in the kernel
   currently broken and inconsistent and most interesting operations are
   guarded behind `capable(CAP_SYS_ADMIN)`, i.e., require `CAP_SYS_ADMIN` in
@@ -449,12 +379,6 @@ point that out explicitly and clearly in the associated patches and Cc
   **Use-Case:** Allow LSMs to make decisions about what mount properties to
   allow and what to deny.
 
-* [x] (kAPI) Add security hook to `create_user_ns()`.
-
-  **🙇 `7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()")` 🙇**
-
-  **Use-Case:** Allow LSMs to monitor user namespace creation.
-
 * A per-cgroup knob for coredump sizes. Currently coredump size
   control is strictly per process, and primarily under control of
   the processes themselves. It would be good if we had a per-cgroup
@@ -521,27 +445,6 @@ point that out explicitly and clearly in the associated patches and Cc
 
   **Use-Case:** Allow mounting images inside nspawn containers, and using
   RootImage= and friends in the systemd user manager.
-
-* [x] Support idmapped mounts for tmpfs
-
-  **🙇 `7a80e5b8c6fa ("shmem: support idmapped mounts for tmpfs")` 🙇**
-
-  **Use-Case:** Runtimes such as Kubernetes use a lot of `tmpfs` mounts of
-  individual files or directories to expose information to containers/pods.
-  Instead of having to change ownership permanently allow them to use an
-  idmapped mount instead.
-
-  @rata and @giuseppe brought this suggestion forward. For Kubernetes it is
-  sufficient to support idmapped mounts of `tmpfs` instances mounted in the
-  initial user namespace. However, in the future idmapped
-  mounts of `tmpfs` instances mounted in user namespaces should be supported.
-  Other container runtimes want to make use of this. The kernel is able to
-  support this since at least `5.17`.
-
-  Things to remember are that `tmpfs` mounts can serve as lower- or upper
-  layers in `overlayfs` and care needs to be taken that this remains safe if
-  idmapped mounts of `tmpfs` instances mounted in user namespaces are
-  supported.
 
 * Support detached mounts with `pivot_root()`
 
@@ -613,18 +516,14 @@ point that out explicitly and clearly in the associated patches and Cc
   system extension with a key pair that is supposed to be good for
   container images only.
 
-* [x] Make statx() on a pidfd return additional recognizable identifiers
-  in `.stx_btime` and `.stx_ino`.
+* Make statx() on a pidfd return additional recognizable identifiers
+  in `.stx_btime`.
 
   **🙇 `cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs` 🙇**
 
   It would be fantastic if issuing statx() on any pidfd would return
   the start time of the process in `.stx_btime` even after the process
-  died, plus some reasonably stable 64bit identifier for the process
-  in `.stx_ino`. Together these two fields would be perfect to
-  identify processes pinned by a pidfd, and compare them, as the 96++
-  bit of information they expose should be unique enough for the
-  entire lifetime of the system to identify the processes.
+  died.
 
   These fields should in particular be queriable *after* the process
   already exited and has been reaped, i.e. after its PID has already
@@ -780,3 +679,124 @@ point that out explicitly and clearly in the associated patches and Cc
   which protocols they support on them. For example D-Bus sockets
   could carry `user.dbus` set to `1`, and Varlink sockets
   `user.varlink` set to `1` and so on.
+
+## Finished Items
+
+* [x] ability to unmount obstructed mounts. (this means: you have a stack
+  of mounts on the very same inode, and you want to remove a mount in
+  the middle. right now, you can only remove the topmost mount.)
+
+  **🙇 instead of the ability to unmount obstructured mounts we gained
+  the ability to mount beneath an existing mount, with mostly
+  equivalent outcome. `6ac392815628f317fcfdca1a39df00b9cc4ebc8b
+  ("fs: allow to mount beneath top mount") 🙇**
+
+  **use-case:** this is useful for replacing mounts atomically, for
+  example for upgrading versioned disk images: first an old version
+  of the image is mounted. then a new version is mounted over the
+  existing mount point, and then the lower mount point is
+  removed. One such software would be `systemd-sysext`.
+
+* [x] `SCM_PIDFD` or similar auxiliary socket message, that is a modern
+  version of the `SCM_CREDS` message's `.pid` field, and provides a
+  `pidfd` file descriptor to the originating peer process.
+
+  **🙇 `5e2ff6704a275be00 ("scm: add SO_PASSPIDFD and SCM_PIDFD)")` 🙇**
+
+  **Use-Case:** security infrastructure (such as PolicyKit) can safely
+  reference clients this way without fearing PID
+  recycling. `systemd-journald` can acquire peer metadata this way in
+  a less racy fashion, in particular safe against PID recycling.
+
+* [x] `IP_UNICAST_IF` should be taken into account for routing decisions
+  at UDP `connect()` time (currently it isn't, only `SO_BINDTOINDEX`
+  is, but that does so much more than just that, and one often
+  doesn't want that)
+
+  **🙇 `0e4d354762cefd3e16b4cff8988ff276e45effc4 ("net-next: Fix
+  IP_UNICAST_IF option behavior for connected sockets")` 🙇**
+
+  **Use-Case:** DNS resolvers that associate DNS configuration with
+  specific network interfaces (example: `systemd-resolved`) typically
+  want to preferably route DNS traffic to the per-interface DNS
+  server via that interface, but not make further restrictions on the
+  origins or received replies, and all that without
+  privileges. `IP_UNICAST_IF` fulfills this role fine for TCP, but
+  for UDP it is not taken into account for the `connect()` routing
+  decision.
+
+* [x] Implement a mount-specific companion to `statx()` that puts at least the
+  following information into `struct mount_info`:
+
+  **🙇 46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 ("add statmount(2) syscall")`` 🙇**
+
+  * mount flags: `MOUNT_ATTR_RDONLY`, ...
+  * time flags: `MOUNT_ATTR_RELATIME`, ...
+    Could probably be combined with mount flags.
+  * propagation setting: `MS_SHARED)`, ...
+  * peer group
+  * mnt id of the mount
+  * mnt id of the mount's parent
+  * owning userns
+
+  There's a bit more advanced stuff systemd would really want but which
+  I think is misplaced in a mountinfo system call including:
+  * list of primary and auxiliary block device major/minor
+  * diskseq value of those device nodes (This is a new block device feature
+    we added that allows preventing device recycling issues when e.g.
+    removing usb devices very quickly and is needed for udev.)
+  * uuid/fsid
+  * feature flags (`O_TMPFILE`, `RENAME_EXCHANGE` supported etc.)
+
+  **Use-Case:** low-level userspace tools have to interact with advanced
+  mount information constantly. This is currently costly and brittel because
+  they have to go and parse `/proc/<pid>/mountinfo`.
+
+* [x] (kAPI) Add security hook to `create_user_ns()`.
+
+  **🙇 `7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()")` 🙇**
+
+  **Use-Case:** Allow LSMs to monitor user namespace creation.
+
+* [x] Support idmapped mounts for tmpfs
+
+  **🙇 `7a80e5b8c6fa ("shmem: support idmapped mounts for tmpfs")` 🙇**
+
+  **Use-Case:** Runtimes such as Kubernetes use a lot of `tmpfs` mounts of
+  individual files or directories to expose information to containers/pods.
+  Instead of having to change ownership permanently allow them to use an
+  idmapped mount instead.
+
+  @rata and @giuseppe brought this suggestion forward. For Kubernetes it is
+  sufficient to support idmapped mounts of `tmpfs` instances mounted in the
+  initial user namespace. However, in the future idmapped
+  mounts of `tmpfs` instances mounted in user namespaces should be supported.
+  Other container runtimes want to make use of this. The kernel is able to
+  support this since at least `5.17`.
+
+  Things to remember are that `tmpfs` mounts can serve as lower- or upper
+  layers in `overlayfs` and care needs to be taken that this remains safe if
+  idmapped mounts of `tmpfs` instances mounted in user namespaces are
+  supported.
+
+* [x] Make statx() on a pidfd return additional recognizable identifiers
+  in `.stx_ino`.
+
+  **🙇 `cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs` 🙇**
+
+  It would be fantastic if issuing statx() on any pidfd would return some
+  reasonably stable 64bit identifier for the process in `.stx_ino`. This would
+  be perfect to identify processes pinned by a pidfd, and compare them.
+
+* [x] Namespace `binfmt_misc` filesystem.
+
+  **🙇 `21ca59b365c0 ("binfmt_misc: enable sandboxed mounts")` 🙇**
+
+  **Use-Case:** Allow containers and sandboxes to register their own binfmt
+  handlers.
+
+* [x] Support idmapped mounts for `overlayfs`
+
+  **🙇 `bc70682a497c ("ovl: support idmapped layers")` 🙇**
+
+  **Use-Case:** Allow containers to use `overlayfs` with idmapped mounts.
