@@ -691,6 +691,12 @@ point that out explicitly and clearly in the associated patches and Cc
    **Use-Case:** Allow for a race free way to go from individual thread to
    thread-group leader pidfd.
 
+* Add a namespace ioctl to translate a PID between PID namespaces.
+
+  **Use-Case:** This makes it possible to e.g., figure out what a given PID in
+  a PID namespace corresponds to in the caller's PID namespace. For example, to
+  figure out what the PID of PID 1 inside of a given PID namespace is.
+
 ## Finished Items
 
 * [x] ability to unmount obstructed mounts. (this means: you have a stack
