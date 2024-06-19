@@ -3,23 +3,14 @@ When implementing ideas on this list or ideas inspired by this list please point
 <link rel=alternate type=application/rss+xml href=https://uapi-group.org/kernel-features/index.xml title="UAPI Group Kernel Feature Ideas"></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
 <input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a href=/kernel-features><span>UAPI Group Kernel Feature Ideas</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div><ul><li><a href=https://uapi-group.org/>⬅️ Back to top</a></li><li>⸻</li></ul><ul><li><a href=https://github.com/uapi-group/kernel-features target=_blank rel=noopener>Collaborate on Github</a></li></ul></nav><script>(function(){var e=document.querySelector("aside.book-menu nav");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/kernel-features/svg/menu.svg class=book-icon alt=Menu></label>
 <strong></strong>
-<label for=toc-control><img src=/kernel-features/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents></nav></aside></header><article class=markdown><h1 id=kernel-features--->Kernel Features 🤞 🎁 🙏
+<label for=toc-control><img src=/kernel-features/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents><ul><li><a href=#finished-items>Finished Items</a></li></ul></nav></aside></header><article class=markdown><h1 id=kernel-features--->Kernel Features 🤞 🎁 🙏
 <a class=anchor href=#kernel-features--->#</a></h1><p>This is a list of kernel features that would be useful to have. The items on
 the list are strictly ideas. It is especially important to not take the items
 on this list as being implementation requests. Some of the ideas on this list
 are rather rough and unrefined. They serve as entry points for exploring the
 associated problem space.</p><p><strong>When implementing ideas on this list or ideas inspired by this list please
 point that out explicitly and clearly in the associated patches and Cc
-<code>Christian Brauner &lt;brauner (at) kernel (dot) org</code>.</strong></p><ul><li><p><input checked disabled type=checkbox> Ability to unmount obstructed mounts. (This means: you have a stack
-of mounts on the very same inode, and you want to remove a mount in
-the middle. Right now, you can only remove the topmost mount.)</p><p><strong>🙇 Instead of the ability to unmount obstructured mounts we gained
-the ability to mount beneath an existing mount, with mostly
-equivalent outcome. `6ac392815628f317fcfdca1a39df00b9cc4ebc8b
-(&ldquo;fs: allow to mount beneath top mount&rdquo;) 🙇</strong></p><p><strong>Use-Case:</strong> this is useful for replacing mounts atomically, for
-example for upgrading versioned disk images: first an old version
-of the image is mounted. Then a new version is mounted over the
-existing mount point, and then the lower mount point is
-removed. One such software would be <code>systemd-sysext</code>.</p></li><li><p>Ability to mount sub-directories of regular file systems instead of
+<code>Christian Brauner &lt;brauner (at) kernel (dot) org</code>.</strong></p><ul><li><p>Ability to mount sub-directories of regular file systems instead of
 the top-level directory. i.e. for a file system <code>/dev/sda1</code> which
 contains a sub-directory <code>/foobar</code> mount <code>/foobar</code> without having
 to mount its parent directory first. Consider something like this:</p><pre tabindex=0><code>mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar
@@ -55,12 +46,7 @@ log messages of service X!&rdquo; can be answered). This is currently
 racy, since it uses <code>SCM_CREDS</code>&rsquo; <code>.pid</code> field for this, which it then
 used to load <code>/proc/$PID/cgroup</code>. In particular for programs that
 log and immediately exit, the cgroup information frequently cannot
-be acquired anymore by <code>systemd-journald</code>.</p></li><li><p><input checked disabled type=checkbox> <code>SCM_PIDFD</code> or similar auxiliary socket message, that is a modern
-version of the <code>SCM_CREDS</code> message&rsquo;s <code>.pid</code> field, and provides a
-<code>pidfd</code> file descriptor to the originating peer process.</p><p><strong>🙇 <code>5e2ff6704a275be00 ("scm: add SO_PASSPIDFD and SCM_PIDFD)")</code> 🙇</strong></p><p><strong>Use-Case:</strong> security infrastructure (such as PolicyKit) can safely
-reference clients this way without fearing PID
-recycling. <code>systemd-journald</code> can acquire peer metadata this way in
-a less racy fashion, in particular safe against PID recycling.</p></li><li><p>Ability to link an <code>O_TMPFILE</code> file into a directory while <em>replacing</em> an
+be acquired anymore by <code>systemd-journald</code>.</p></li><li><p>Ability to link an <code>O_TMPFILE</code> file into a directory while <em>replacing</em> an
 existing file. (Currently there&rsquo;s only the ability to link it in, if the
 file name doesn&rsquo;t exist yet.)</p><p><strong>Use-Case:</strong> there are many programs (e.g. <code>systemd-hostnamed</code>
 when updating <code>/etc/hostname</code>) that atomically want to update a
@@ -79,17 +65,7 @@ FIFOs) come with blocking I/O (or even blocking <code>open()</code>!) by
 default, which is not expected from regular files backed by &ldquo;fast&rdquo;
 disk I/O. Consider implementation of a naive web browser which is
 pointed to <code>file://dev/zero</code>, not expecting an endless amount of
-data to read.</p></li><li><p><input checked disabled type=checkbox> <code>IP_UNICAST_IF</code> should be taken into account for routing decisions
-at UDP <code>connect()</code> time (currently it isn&rsquo;t, only <code>SO_BINDTOINDEX</code>
-is, but that does so much more than just that, and one often
-doesn&rsquo;t want that)</p><p><strong>🙇 <code>0e4d354762cefd3e16b4cff8988ff276e45effc4 ("net-next: Fix IP_UNICAST_IF option behavior for connected sockets")</code> 🙇</strong></p><p><strong>Use-Case:</strong> DNS resolvers that associate DNS configuration with
-specific network interfaces (example: <code>systemd-resolved</code>) typically
-want to preferably route DNS traffic to the per-interface DNS
-server via that interface, but not make further restrictions on the
-origins or received replies, and all that without
-privileges. <code>IP_UNICAST_IF</code> fulfills this role fine for TCP, but
-for UDP it is not taken into account for the <code>connect()</code> routing
-decision.</p></li><li><p><code>unlinkat3(dir_fd, name, inode_fd)</code>: taking one file descriptor
+data to read.</p></li><li><p><code>unlinkat3(dir_fd, name, inode_fd)</code>: taking one file descriptor
 for the directory to remove a file in, and another one referring
 to the inode of the filename to remove. This call should only
 succeed if the specified filename still refers to the specified
@@ -245,14 +221,7 @@ whose attributes cannot be changed by the caller don&rsquo;t want
 <code>mount_settattr()</code> to fail on the first mount it failed to convert. Give
 them a flag to request changes ignoring failures.</p></li><li><p>Add upgrade masks to <code>openat2()</code>. Extend <code>struct open_how</code> to allow
 restrict re-opening of file descriptors.</p><p><strong>Use-Case:</strong> block services or containers from re-opening/upgrading an
-<code>O_PATH</code> file descriptor through e.g. <code>/proc/&lt;pid>/fd/&lt;nr</code> as <code>O_WRONLY</code>.</p></li><li><p><input checked disabled type=checkbox> Implement a mount-specific companion to <code>statx()</code> that puts at least the
-following information into <code>struct mount_info</code>:</p><p><strong>🙇 46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 (&ldquo;add statmount(2) syscall&rdquo;)`` 🙇</strong></p><ul><li>mount flags: <code>MOUNT_ATTR_RDONLY</code>, &mldr;</li><li>time flags: <code>MOUNT_ATTR_RELATIME</code>, &mldr;
-Could probably be combined with mount flags.</li><li>propagation setting: <code>MS_SHARED)</code>, &mldr;</li><li>peer group</li><li>mnt id of the mount</li><li>mnt id of the mount&rsquo;s parent</li><li>owning userns</li></ul><p>There&rsquo;s a bit more advanced stuff systemd would really want but which
-I think is misplaced in a mountinfo system call including:</p><ul><li>list of primary and auxiliary block device major/minor</li><li>diskseq value of those device nodes (This is a new block device feature
-we added that allows preventing device recycling issues when e.g.
-removing usb devices very quickly and is needed for udev.)</li><li>uuid/fsid</li><li>feature flags (<code>O_TMPFILE</code>, <code>RENAME_EXCHANGE</code> supported etc.)</li></ul><p><strong>Use-Case:</strong> low-level userspace tools have to interact with advanced
-mount information constantly. This is currently costly and brittel because
-they have to go and parse <code>/proc/&lt;pid>/mountinfo</code>.</p></li><li><p>Make quotas work with user namespaces. The quota codepaths in the kernel
+<code>O_PATH</code> file descriptor through e.g. <code>/proc/&lt;pid>/fd/&lt;nr</code> as <code>O_WRONLY</code>.</p></li><li><p>Make quotas work with user namespaces. The quota codepaths in the kernel
 currently broken and inconsistent and most interesting operations are
 guarded behind <code>capable(CAP_SYS_ADMIN)</code>, i.e., require <code>CAP_SYS_ADMIN</code> in
 the initial user namespace. We should rework these codepaths to work with
@@ -291,7 +260,7 @@ Currently specifying e.g., <code>CLONE_NEWUSER</code> fails if the caller is in 
 same user namespace as the target process. This is very inconvenient.</p><p><strong>Use-Case:</strong> Make it trivial to attach to all namespaces of a process
 without having to figure out whether the caller is already in the same
 namespace or not.</p></li><li><p>(kAPI) Add security hook to <code>mount_setattr()</code>.</p><p><strong>Use-Case:</strong> Allow LSMs to make decisions about what mount properties to
-allow and what to deny.</p></li><li><p><input checked disabled type=checkbox> (kAPI) Add security hook to <code>create_user_ns()</code>.</p><p><strong>🙇 <code>7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()")</code> 🙇</strong></p><p><strong>Use-Case:</strong> Allow LSMs to monitor user namespace creation.</p></li><li><p>A per-cgroup knob for coredump sizes. Currently coredump size
+allow and what to deny.</p></li><li><p>A per-cgroup knob for coredump sizes. Currently coredump size
 control is strictly per process, and primarily under control of
 the processes themselves. It would be good if we had a per-cgroup
 knob instead, that is under control of the service manager.</p><p><strong>Use-Case:</strong> coredumps can be heavy to generate. For different
@@ -337,18 +306,7 @@ loader and similar, without making things vulnerable to rogue file
 system image attacks. The OS and its payloads (apps, containers,
 …) could then be composed from these resources, through means like
 overlayfs, namespacing and more.</p></li><li><p>Namespace-able loop and block devices, usable inside user namespaces.</p><p><strong>Use-Case:</strong> Allow mounting images inside nspawn containers, and using
-RootImage= and friends in the systemd user manager.</p></li><li><p><input checked disabled type=checkbox> Support idmapped mounts for tmpfs</p><p><strong>🙇 <code>7a80e5b8c6fa ("shmem: support idmapped mounts for tmpfs")</code> 🙇</strong></p><p><strong>Use-Case:</strong> Runtimes such as Kubernetes use a lot of <code>tmpfs</code> mounts of
-individual files or directories to expose information to containers/pods.
-Instead of having to change ownership permanently allow them to use an
-idmapped mount instead.</p><p>@rata and @giuseppe brought this suggestion forward. For Kubernetes it is
-sufficient to support idmapped mounts of <code>tmpfs</code> instances mounted in the
-initial user namespace. However, in the future idmapped
-mounts of <code>tmpfs</code> instances mounted in user namespaces should be supported.
-Other container runtimes want to make use of this. The kernel is able to
-support this since at least <code>5.17</code>.</p><p>Things to remember are that <code>tmpfs</code> mounts can serve as lower- or upper
-layers in <code>overlayfs</code> and care needs to be taken that this remains safe if
-idmapped mounts of <code>tmpfs</code> instances mounted in user namespaces are
-supported.</p></li><li><p>Support detached mounts with <code>pivot_root()</code></p><p>The new rootfs must currently refer to an attached mount. This restriction
+RootImage= and friends in the systemd user manager.</p></li><li><p>Support detached mounts with <code>pivot_root()</code></p><p>The new rootfs must currently refer to an attached mount. This restriction
 seems unnecessary. We should allow the new rootfs to refer to a detached
 mount.</p><p>This will allow a service- or container manager to create a new rootfs as
 a detached, private mount that isn&rsquo;t exposed anywhere in the filesystem and
@@ -387,14 +345,10 @@ images, system extension images, configuration images, container
 images with different keys, as they typically originate from
 different sources and it should not be possible to generate a
 system extension with a key pair that is supposed to be good for
-container images only.</p></li><li><p><input checked disabled type=checkbox> Make statx() on a pidfd return additional recognizable identifiers
-in <code>.stx_btime</code> and <code>.stx_ino</code>.</p><p><strong>🙇 <code>cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs</code> 🙇</strong></p><p>It would be fantastic if issuing statx() on any pidfd would return
+container images only.</p></li><li><p>Make statx() on a pidfd return additional recognizable identifiers
+in <code>.stx_btime</code>.</p><p><strong>🙇 <code>cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs</code> 🙇</strong></p><p>It would be fantastic if issuing statx() on any pidfd would return
 the start time of the process in <code>.stx_btime</code> even after the process
-died, plus some reasonably stable 64bit identifier for the process
-in <code>.stx_ino</code>. Together these two fields would be perfect to
-identify processes pinned by a pidfd, and compare them, as the 96++
-bit of information they expose should be unique enough for the
-entire lifetime of the system to identify the processes.</p><p>These fields should in particular be queriable <em>after</em> the process
+died.</p><p>These fields should in particular be queriable <em>after</em> the process
 already exited and has been reaped, i.e. after its PID has already
 been recycled.</p><p><strong>Usecase:</strong> In systemd we maintain lists of processes in a hash
 table. Right now, the key is the PID, but this is less than ideal
@@ -498,5 +452,52 @@ also be extended to other sockets and other protocols: by setting
 some extended attribute on a socket inodes, services could advertise
 which protocols they support on them. For example D-Bus sockets
 could carry <code>user.dbus</code> set to <code>1</code>, and Varlink sockets
-<code>user.varlink</code> set to <code>1</code> and so on.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
-<span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents></nav></div></aside></main></body></html>
+<code>user.varlink</code> set to <code>1</code> and so on.</p></li></ul><h2 id=finished-items>Finished Items
+<a class=anchor href=#finished-items>#</a></h2><ul><li><p><input checked disabled type=checkbox> ability to unmount obstructed mounts. (this means: you have a stack
+of mounts on the very same inode, and you want to remove a mount in
+the middle. right now, you can only remove the topmost mount.)</p><p><strong>🙇 instead of the ability to unmount obstructured mounts we gained
+the ability to mount beneath an existing mount, with mostly
+equivalent outcome. `6ac392815628f317fcfdca1a39df00b9cc4ebc8b
+(&ldquo;fs: allow to mount beneath top mount&rdquo;) 🙇</strong></p><p><strong>use-case:</strong> this is useful for replacing mounts atomically, for
+example for upgrading versioned disk images: first an old version
+of the image is mounted. then a new version is mounted over the
+existing mount point, and then the lower mount point is
+removed. One such software would be <code>systemd-sysext</code>.</p></li><li><p><input checked disabled type=checkbox> <code>SCM_PIDFD</code> or similar auxiliary socket message, that is a modern
+version of the <code>SCM_CREDS</code> message&rsquo;s <code>.pid</code> field, and provides a
+<code>pidfd</code> file descriptor to the originating peer process.</p><p><strong>🙇 <code>5e2ff6704a275be00 ("scm: add SO_PASSPIDFD and SCM_PIDFD)")</code> 🙇</strong></p><p><strong>Use-Case:</strong> security infrastructure (such as PolicyKit) can safely
+reference clients this way without fearing PID
+recycling. <code>systemd-journald</code> can acquire peer metadata this way in
+a less racy fashion, in particular safe against PID recycling.</p></li><li><p><input checked disabled type=checkbox> <code>IP_UNICAST_IF</code> should be taken into account for routing decisions
+at UDP <code>connect()</code> time (currently it isn&rsquo;t, only <code>SO_BINDTOINDEX</code>
+is, but that does so much more than just that, and one often
+doesn&rsquo;t want that)</p><p><strong>🙇 <code>0e4d354762cefd3e16b4cff8988ff276e45effc4 ("net-next: Fix IP_UNICAST_IF option behavior for connected sockets")</code> 🙇</strong></p><p><strong>Use-Case:</strong> DNS resolvers that associate DNS configuration with
+specific network interfaces (example: <code>systemd-resolved</code>) typically
+want to preferably route DNS traffic to the per-interface DNS
+server via that interface, but not make further restrictions on the
+origins or received replies, and all that without
+privileges. <code>IP_UNICAST_IF</code> fulfills this role fine for TCP, but
+for UDP it is not taken into account for the <code>connect()</code> routing
+decision.</p></li><li><p><input checked disabled type=checkbox> Implement a mount-specific companion to <code>statx()</code> that puts at least the
+following information into <code>struct mount_info</code>:</p><p><strong>🙇 46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 (&ldquo;add statmount(2) syscall&rdquo;)`` 🙇</strong></p><ul><li>mount flags: <code>MOUNT_ATTR_RDONLY</code>, &mldr;</li><li>time flags: <code>MOUNT_ATTR_RELATIME</code>, &mldr;
+Could probably be combined with mount flags.</li><li>propagation setting: <code>MS_SHARED)</code>, &mldr;</li><li>peer group</li><li>mnt id of the mount</li><li>mnt id of the mount&rsquo;s parent</li><li>owning userns</li></ul><p>There&rsquo;s a bit more advanced stuff systemd would really want but which
+I think is misplaced in a mountinfo system call including:</p><ul><li>list of primary and auxiliary block device major/minor</li><li>diskseq value of those device nodes (This is a new block device feature
+we added that allows preventing device recycling issues when e.g.
+removing usb devices very quickly and is needed for udev.)</li><li>uuid/fsid</li><li>feature flags (<code>O_TMPFILE</code>, <code>RENAME_EXCHANGE</code> supported etc.)</li></ul><p><strong>Use-Case:</strong> low-level userspace tools have to interact with advanced
+mount information constantly. This is currently costly and brittel because
+they have to go and parse <code>/proc/&lt;pid>/mountinfo</code>.</p></li><li><p><input checked disabled type=checkbox> (kAPI) Add security hook to <code>create_user_ns()</code>.</p><p><strong>🙇 <code>7cd4c5c2101c ("security, lsm: Introduce security_create_user_ns()")</code> 🙇</strong></p><p><strong>Use-Case:</strong> Allow LSMs to monitor user namespace creation.</p></li><li><p><input checked disabled type=checkbox> Support idmapped mounts for tmpfs</p><p><strong>🙇 <code>7a80e5b8c6fa ("shmem: support idmapped mounts for tmpfs")</code> 🙇</strong></p><p><strong>Use-Case:</strong> Runtimes such as Kubernetes use a lot of <code>tmpfs</code> mounts of
+individual files or directories to expose information to containers/pods.
+Instead of having to change ownership permanently allow them to use an
+idmapped mount instead.</p><p>@rata and @giuseppe brought this suggestion forward. For Kubernetes it is
+sufficient to support idmapped mounts of <code>tmpfs</code> instances mounted in the
+initial user namespace. However, in the future idmapped
+mounts of <code>tmpfs</code> instances mounted in user namespaces should be supported.
+Other container runtimes want to make use of this. The kernel is able to
+support this since at least <code>5.17</code>.</p><p>Things to remember are that <code>tmpfs</code> mounts can serve as lower- or upper
+layers in <code>overlayfs</code> and care needs to be taken that this remains safe if
+idmapped mounts of <code>tmpfs</code> instances mounted in user namespaces are
+supported.</p></li><li><p><input checked disabled type=checkbox> Make statx() on a pidfd return additional recognizable identifiers
+in <code>.stx_ino</code>.</p><p><strong>🙇 <code>cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs</code> 🙇</strong></p><p>It would be fantastic if issuing statx() on any pidfd would return some
+reasonably stable 64bit identifier for the process in <code>.stx_ino</code>. This would
+be perfect to identify processes pinned by a pidfd, and compare them.</p></li><li><p><input checked disabled type=checkbox> Namespace <code>binfmt_misc</code> filesystem.</p><p><strong>🙇 <code>21ca59b365c0 ("binfmt_misc: enable sandboxed mounts")</code> 🙇</strong></p><p><strong>Use-Case:</strong> Allow containers and sandboxes to register their own binfmt
+handlers.</p></li><li><p><input checked disabled type=checkbox> Support idmapped mounts for <code>overlayfs</code></p><p><strong>🙇 <code>bc70682a497c ("ovl: support idmapped layers")</code> 🙇</strong></p><p><strong>Use-Case:</strong> Allow containers to use <code>overlayfs</code> with idmapped mounts.</p></li></ul></article><footer class=book-footer><div class="flex flex-wrap justify-between"><div><a class="flex align-center" href=https://github.com/uapi-group/kernel-features/edit/main/README.md target=_blank rel=noopener><img src=/kernel-features/svg/edit.svg class=book-icon alt=Edit>
+<span>Edit this page</span></a></div></div></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents><ul><li><a href=#finished-items>Finished Items</a></li></ul></nav></div></aside></main></body></html>
