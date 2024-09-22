@@ -783,7 +783,7 @@ the middle. right now, you can only remove the topmost mount.)
 **🙇 instead of the ability to unmount obstructured mounts we gained
 the ability to mount beneath an existing mount, with mostly
 equivalent outcome. `6ac392815628f317fcfdca1a39df00b9cc4ebc8b
-("fs: allow to mount beneath top mount") 🙇**
+("fs: allow to mount beneath top mount")` 🙇**
 
 **use-case:** this is useful for replacing mounts atomically, for
 example for upgrading versioned disk images: first an old version
@@ -828,7 +828,7 @@ decision.
 [x] Implement a mount-specific companion to `statx()` that puts at least the
 following information into `struct mount_info`:
 
-**🙇 46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 ("add statmount(2) syscall")`` 🙇**
+**🙇 `46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 ("add statmount(2) syscall")` 🙇**
 
 * mount flags: `MOUNT_ATTR_RDONLY`, ...
 * time flags: `MOUNT_ATTR_RELATIME`, ...
