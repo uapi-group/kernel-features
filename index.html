@@ -506,8 +506,7 @@ figure out what the PID of PID 1 inside of a given PID namespace is.</p><h2 id=f
 of mounts on the very same inode, and you want to remove a mount in
 the middle. right now, you can only remove the topmost mount.)</p><p><strong>🙇 instead of the ability to unmount obstructured mounts we gained
 the ability to mount beneath an existing mount, with mostly
-equivalent outcome. `6ac392815628f317fcfdca1a39df00b9cc4ebc8b
-(&ldquo;fs: allow to mount beneath top mount&rdquo;) 🙇</strong></p><p><strong>use-case:</strong> this is useful for replacing mounts atomically, for
+equivalent outcome. <code>6ac392815628f317fcfdca1a39df00b9cc4ebc8b ("fs: allow to mount beneath top mount")</code> 🙇</strong></p><p><strong>use-case:</strong> this is useful for replacing mounts atomically, for
 example for upgrading versioned disk images: first an old version
 of the image is mounted. then a new version is mounted over the
 existing mount point, and then the lower mount point is
@@ -530,7 +529,7 @@ privileges. <code>IP_UNICAST_IF</code> fulfills this role fine for TCP, but
 for UDP it is not taken into account for the <code>connect()</code> routing
 decision.</p><h3 id=a-system-call-to-query-information-about-a-mount>A system call to query information about a mount
 <a class=anchor href=#a-system-call-to-query-information-about-a-mount>#</a></h3><p>[x] Implement a mount-specific companion to <code>statx()</code> that puts at least the
-following information into <code>struct mount_info</code>:</p><p><strong>🙇 46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 (&ldquo;add statmount(2) syscall&rdquo;)`` 🙇</strong></p><ul><li>mount flags: <code>MOUNT_ATTR_RDONLY</code>, &mldr;</li><li>time flags: <code>MOUNT_ATTR_RELATIME</code>, &mldr;
+following information into <code>struct mount_info</code>:</p><p><strong>🙇 <code>46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 ("add statmount(2) syscall")</code> 🙇</strong></p><ul><li>mount flags: <code>MOUNT_ATTR_RDONLY</code>, &mldr;</li><li>time flags: <code>MOUNT_ATTR_RELATIME</code>, &mldr;
 Could probably be combined with mount flags.</li><li>propagation setting: <code>MS_SHARED)</code>, &mldr;</li><li>peer group</li><li>mnt id of the mount</li><li>mnt id of the mount&rsquo;s parent</li><li>owning userns</li></ul><p>There&rsquo;s a bit more advanced stuff systemd would really want but which
 I think is misplaced in a mountinfo system call including:</p><ul><li>list of primary and auxiliary block device major/minor</li><li>diskseq value of those device nodes (This is a new block device feature
 we added that allows preventing device recycling issues when e.g.
