@@ -54,7 +54,7 @@ being released, not the devices being closed.
 
 ### Auxiliary socket message describing the sender's cgroup
 
-`SCM_CGROUP` or a similar auxiliary socket message, that allows
+`SCM_CGROUPID` or a similar auxiliary socket message, that allows
 receivers to figure out which cgroup a sender is part of.
 
 **Use-Case:** `systemd-journald` picks up cgroup information from
@@ -327,7 +327,7 @@ impossible in languages that do not allow `fork()` without `execve()`.
 block device probing via flock(). Often userspace wants to wait
 for that, but without risking to hang forever.
 
-### Extend `mount_setattr()` to allow changing mount properties ignoring any failures 
+### Extend `mount_setattr()` to allow changing mount properties ignoring any failures
 
 **Use-Case:** workloads that know that there are mounts in a mount tree
 whose attributes cannot be changed by the caller don't want
@@ -638,7 +638,7 @@ to safely and race-freely invoke processes, but the fact that `comm`
 is useless after invoking a process that way makes the call
 unfortunately hard to use for systemd.
 
-### Path-based ACL management
+### Path-based ACL management in an LSM hook
 
 The LSM module API should have the ability to do path-based (not
 just inode-based) ACL management.
@@ -720,7 +720,7 @@ in case the process dies and its PID is quickly recycled. (This
 assumes systemd can acquire a pidfd of the foreign process without
 races, for example via `SCM_PIDFD` and `SO_PEERPIDFD` or similar.)
 
-### Ability to put user xattrs on `S_IFSOCK` socket inodes
+### Ability to put user xattrs on `S_IFSOCK` socket entrypoint inodes in the file system
 
 Currently, the kernel only allows extended attributes in the
 `user.*` namespace to be attached to directory and regular file
