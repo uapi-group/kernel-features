@@ -614,6 +614,8 @@ identify, track and compare process even after they ceased to exist.
 
 ### API to determine the parent process ID of a pidfd
 
+[x] API to determine the parent process ID of a pidfd
+
 An API to determine the parent process ID (ppid) of a pidfd would be
 good.
 
@@ -622,6 +624,8 @@ the ppid of a pidfd matches the process own pid it can call
 `waitid()` on the process, if it doesn't it cannot and such a call
 would fail. It would be very useful if this could be determined
 easily before even calling that syscall.
+
+**🙇 `cdda1f26e74b ("pidfd: add ioctl to retrieve pid info")` 🙇**
 
 **Usecase:** systemd manages a multitude of processes, most of which
 are its own children, but many which are not. It would be great if
