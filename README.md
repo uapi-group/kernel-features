@@ -137,8 +137,12 @@ propagated.
 
 ### Disabling reception of `SCM_RIGHTS` for `AF_UNIX` sockets
 
-Ability to turn off `SCM_RIGHTS` reception for `AF_UNIX`
-sockets. Right now reception of file descriptors is always on when
+[x] Ability to turn off `SCM_RIGHTS` reception for `AF_UNIX`
+sockets.
+
+**🙇 `77cbe1a6d8730a07f99f9263c2d5f2304cf5e830 ("af_unix: Introduce SO_PASSRIGHTS")` 🙇**
+
+Right now reception of file descriptors is always on when
 a process makes the mistake of invoking `recvmsg()` on such a
 socket. This is problematic since `SCM_RIGHTS` installs file
 descriptors in the recipient process' file descriptor
@@ -189,13 +193,17 @@ received" may be expressed. (BPF?).
 
 ### A reliable way to check for PID namespacing
 
-A reliable (non-heuristic) way to detect from userspace if the
+[x] A reliable (non-heuristic) way to detect from userspace if the
 current process is running in a PID namespace that is not the main
 PID namespace. PID namespaces are probably the primary type of
 namespace that identify a container environment. While many
 heuristics exist to determine generically whether one is executed
 inside a container, it would be good to have a correct,
 well-defined way to determine this.
+
+**🙇 The inode number of the root PID namespace is fixed (0xEFFFFFFC)
+and now considered API. It can be used to distinguish the root PID
+namespace from all others. 🙇**
 
 **Use-Case:** tools such as `systemd-detect-virt` exist to determine
 container execution, but typically resolve to checking for
@@ -205,7 +213,6 @@ probably suffice to provide an `ioctl()` call on the `pidns` file
 descriptor that reveals this kind of information in some form.
 
 ### Excluding processes watched via `pidfd` from `waitid(P_ALL, …)`
-
 
 **Use-Case:** various programs use `waitid(P_ALL, …)` to collect exit
 information of exited child processes. In particular PID 1 and
