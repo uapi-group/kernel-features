@@ -629,6 +629,22 @@ tells userspace that there was an fd, but it was not allowed through.
 
 **Use-Case:** Any code that wants to use `SCM_RIGHTS` properly.
 
+### Block reopening R/O file descriptor for /proc/self/exe and /proc/self/map_files/*
+
+Provide a security primitive that prevents processes from reopening a
+read-only file descriptor to `/proc/self/exe` and files under
+`/proc/self/map_files`. This directly addresses the attack vector used
+in CVE-2019-5736.
+
+A common workaround used by container runtimes to prevent an untrusted
+container process from overwriting the host's runtime executable is to
+"re-exec" themselves from a read-only copy of the binary.
+
+While this looks like a kernel issue, the assumption is still that any
+container runtime must ensure its binary cannot be overwritten.
+
+**Use-Case:** Any container runtime that executes an untrusted executable.
+
 ---
 
 ## Finished Items
