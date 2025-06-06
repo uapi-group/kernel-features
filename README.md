@@ -480,7 +480,7 @@ does not work anymore. It would be great if there was an API to
 simply query `overlayfs` for the superblock information
 (i.e. `.st_dev`) of the backing layers.
 
-#### Automatic growing of `btrfs` filesystems
+### Automatic growing of `btrfs` filesystems
 
 An *auto-grow* feature in `btrfs` would be excellent.
 
@@ -692,6 +692,7 @@ https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c
 to safely and race-freely invoke processes, but the fact that `comm`
 is useless after invoking a process that way makes the call
 unfortunately hard to use for systemd.
+
 ### Make statx() on a pidfd return additional info
 
 Make statx() on a pidfd return additional recognizable identifiers in
