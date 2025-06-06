@@ -663,6 +663,32 @@ speaking the 2nd idea makes the 1st idea half-way redundant.
 so on) needs this, so that it can reasonably handle SELinux AVC errors
 on received messages.
 
+### Reasonable EOF on SOCK_SEQPACKET
+
+Zero size datagrams cannot be distinguished from EOF on
+`SOCK_SEQPACKET`. Both will cause `recvmsg()` to return zero.
+
+Idea how to improve things: maybe define a new MSG_XYZ flag for this,
+which causes either of the two cases result in some recognizable error
+code returned rather than a 0.
+
+**Use-Case:** Any code that wants to use `SOCK_SEQPACKET` and cannot
+effort disallowing zero sized datagrams from their protocol.
+
+### Reasonable Handling of SELinux dropping SCM_RIGHTS fds
+
+Currently, if SELinux refuses to let some file descriptor through, it
+will just drop them from the `SCM_RIGHTS` array. That's a terrible
+idea, since applications rely on the precise arrangement of the array
+to know which fd is which. By dropping entries silently, these apps
+will all break.
+
+Idea how to improve things: leave the elements in the array in place,
+but return a marker instead (i.e. negative integer, maybe `-EPERM`) that
+tells userspace that there was an fd, but it was not allowed through.
+
+**Use-Case:** Any code that wants to use `SCM_RIGHTS` properly.
+
 ---
 
 ## Finished Items
