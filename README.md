@@ -12,6 +12,8 @@ point that out explicitly and clearly in the associated patches and Cc
 
 ### Mount a subdirectory instead of the top-level directory
 
+[x] Mount a subdirectory instead of the top-level directory
+
 Ability to mount a subdirectory of a regular file system instead of
 the top-level directory. E.e. for a file system `/dev/sda1` which
 contains a sub-directory `/foobar` mount `/foobar` without having
@@ -25,6 +27,8 @@ mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar
 shenanigans, but this requires namespacing to be available, and is
 not precisely obvious to implement. Explicit kernel support at mount
 time would be much preferable.)
+
+**🙇 `c5c12f871a30 ("fs: create detached mounts from detached mounts")` 🙇**
 
 **Use-Case:** `systemd-homed` currently mounts a sub-directory of
 the per-user LUKS volume as the user's home directory (and not the
