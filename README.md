@@ -635,6 +635,8 @@ them is the only way to get exit notification.
 
 ### Set `comm` field before `exec()`
 
+[x] Set `comm` field before `exec()`
+
 There should be a way to control the process' `comm` field if
 started via `fexecve()`/`execveat()`.
 
@@ -652,6 +654,8 @@ time.
 
 See https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294,
 https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81.
+
+**🙇 `543841d18060 ("exec: fix up /proc/pid/comm in the execveat(AT_EMPTY_PATH) case")` 🙇**
 
 **Usecase:** In systemd we generally would prefer using `fexecve()`
 to safely and race-freely invoke processes, but the fact that `comm`
