@@ -135,48 +135,6 @@ entirely read-only. To close this gap it would be great if such
 propagated mounts could implicitly gain `MS_RDONLY` as they are
 propagated.
 
-### Disabling reception of `SCM_RIGHTS` for `AF_UNIX` sockets
-
-Ability to turn off `SCM_RIGHTS` reception for `AF_UNIX`
-sockets. Right now reception of file descriptors is always on when
-a process makes the mistake of invoking `recvmsg()` on such a
-socket. This is problematic since `SCM_RIGHTS` installs file
-descriptors in the recipient process' file descriptor
-table. Getting rid of these file descriptors is not necessarily
-easy, as they could refer to "slow-to-close" files (think: dirty
-file descriptor referring to a file on an unresponsive NFS server,
-or some device file descriptor), that might cause the recipient to
-block for a longer time when it tries to them. Programs reading
-from an `AF_UNIX` socket currently have three options:
-
-1. Never use `recvmsg()`, and stick to `read()`, `recv()` and
-   similar which do not install file descriptors in the recipients
-   file descriptor table.
-
-2. Ignore the problem, and simply `close()` the received file descriptors
-   it didn't expect, thus possibly locking up for a longer time.
-
-3. Fork off a thread that invokes `close()`, which mitigates the
-   risk of blocking, but still means a sender can cause resource
-   exhaustion in a recipient by flooding it with file descriptors,
-   as for each of them a thread needs to be spawned and a file
-   descriptor is taken while it is in the process of being closed.
-
-(Another option of course is to never talk `AF_UNIX` to peers that
-are not trusted to not send unexpected file descriptors.)
-
-A simple knob that allows turning off `SCM_RIGHTS` right reception
-would be useful to close this weakness, and would allow
-`recvmsg()` to be called without risking file descriptors to be
-installed in the file descriptor table, and thus risking a
-blocking `close()` or a form of potential resource exhaustion.
-
-**Use-Case:** any program that uses `AF_UNIX` sockets and uses (or
-would like to use) `recvmsg()` on it (which is useful to acquire
-other metadata). Example: logging daemons that want to collect
-timestamp or `SCM_CREDS` auxiliary data, or the D-Bus message
-broker and suchlike.
-
 ### Filtering on received file descriptors
 
 An alternative to the previous item could be if some form of filtering
@@ -187,25 +145,7 @@ received" may be expressed. (BPF?).
 
 **Use-Case:** as above.
 
-### A reliable way to check for PID namespacing
-
-A reliable (non-heuristic) way to detect from userspace if the
-current process is running in a PID namespace that is not the main
-PID namespace. PID namespaces are probably the primary type of
-namespace that identify a container environment. While many
-heuristics exist to determine generically whether one is executed
-inside a container, it would be good to have a correct,
-well-defined way to determine this.
-
-**Use-Case:** tools such as `systemd-detect-virt` exist to determine
-container execution, but typically resolve to checking for
-specific implementations. It would be much nicer and universally
-applicable if such a check could be done generically. It would
-probably suffice to provide an `ioctl()` call on the `pidns` file
-descriptor that reveals this kind of information in some form.
-
 ### Excluding processes watched via `pidfd` from `waitid(P_ALL, …)`
-
 
 **Use-Case:** various programs use `waitid(P_ALL, …)` to collect exit
 information of exited child processes. In particular PID 1 and
@@ -540,7 +480,7 @@ does not work anymore. It would be great if there was an API to
 simply query `overlayfs` for the superblock information
 (i.e. `.st_dev`) of the backing layers.
 
-#### Automatic growing of `btrfs` filesystems
+### Automatic growing of `btrfs` filesystems
 
 An *auto-grow* feature in `btrfs` would be excellent.
 
@@ -663,6 +603,32 @@ speaking the 2nd idea makes the 1st idea half-way redundant.
 so on) needs this, so that it can reasonably handle SELinux AVC errors
 on received messages.
 
+### Reasonable EOF on SOCK_SEQPACKET
+
+Zero size datagrams cannot be distinguished from EOF on
+`SOCK_SEQPACKET`. Both will cause `recvmsg()` to return zero.
+
+Idea how to improve things: maybe define a new MSG_XYZ flag for this,
+which causes either of the two cases result in some recognizable error
+code returned rather than a 0.
+
+**Use-Case:** Any code that wants to use `SOCK_SEQPACKET` and cannot
+effort disallowing zero sized datagrams from their protocol.
+
+### Reasonable Handling of SELinux dropping SCM_RIGHTS fds
+
+Currently, if SELinux refuses to let some file descriptor through, it
+will just drop them from the `SCM_RIGHTS` array. That's a terrible
+idea, since applications rely on the precise arrangement of the array
+to know which fd is which. By dropping entries silently, these apps
+will all break.
+
+Idea how to improve things: leave the elements in the array in place,
+but return a marker instead (i.e. negative integer, maybe `-EPERM`) that
+tells userspace that there was an fd, but it was not allowed through.
+
+**Use-Case:** Any code that wants to use `SCM_RIGHTS` properly.
+
 ---
 
 ## Finished Items
@@ -726,6 +692,7 @@ https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c
 to safely and race-freely invoke processes, but the fact that `comm`
 is useless after invoking a process that way makes the call
 unfortunately hard to use for systemd.
+
 ### Make statx() on a pidfd return additional info
 
 Make statx() on a pidfd return additional recognizable identifiers in
@@ -974,3 +941,70 @@ handlers.
 **🙇 `bc70682a497c ("ovl: support idmapped layers")` 🙇**
 
 **Use-Case:** Allow containers to use `overlayfs` with idmapped mounts.
+
+### Disabling reception of `SCM_RIGHTS` for `AF_UNIX` sockets
+
+[x] Ability to turn off `SCM_RIGHTS` reception for `AF_UNIX`
+sockets.
+
+**🙇 `77cbe1a6d8730a07f99f9263c2d5f2304cf5e830 ("af_unix: Introduce SO_PASSRIGHTS")` 🙇**
+
+Right now reception of file descriptors is always on when
+a process makes the mistake of invoking `recvmsg()` on such a
+socket. This is problematic since `SCM_RIGHTS` installs file
+descriptors in the recipient process' file descriptor
+table. Getting rid of these file descriptors is not necessarily
+easy, as they could refer to "slow-to-close" files (think: dirty
+file descriptor referring to a file on an unresponsive NFS server,
+or some device file descriptor), that might cause the recipient to
+block for a longer time when it tries to them. Programs reading
+from an `AF_UNIX` socket currently have three options:
+
+1. Never use `recvmsg()`, and stick to `read()`, `recv()` and
+   similar which do not install file descriptors in the recipients
+   file descriptor table.
+
+2. Ignore the problem, and simply `close()` the received file descriptors
+   it didn't expect, thus possibly locking up for a longer time.
+
+3. Fork off a thread that invokes `close()`, which mitigates the
+   risk of blocking, but still means a sender can cause resource
+   exhaustion in a recipient by flooding it with file descriptors,
+   as for each of them a thread needs to be spawned and a file
+   descriptor is taken while it is in the process of being closed.
+
+(Another option of course is to never talk `AF_UNIX` to peers that
+are not trusted to not send unexpected file descriptors.)
+
+A simple knob that allows turning off `SCM_RIGHTS` right reception
+would be useful to close this weakness, and would allow
+`recvmsg()` to be called without risking file descriptors to be
+installed in the file descriptor table, and thus risking a
+blocking `close()` or a form of potential resource exhaustion.
+
+**Use-Case:** any program that uses `AF_UNIX` sockets and uses (or
+would like to use) `recvmsg()` on it (which is useful to acquire
+other metadata). Example: logging daemons that want to collect
+timestamp or `SCM_CREDS` auxiliary data, or the D-Bus message
+broker and suchlike.
+
+### A reliable way to check for PID namespacing
+
+[x] A reliable (non-heuristic) way to detect from userspace if the
+current process is running in a PID namespace that is not the main
+PID namespace. PID namespaces are probably the primary type of
+namespace that identify a container environment. While many
+heuristics exist to determine generically whether one is executed
+inside a container, it would be good to have a correct,
+well-defined way to determine this.
+
+**🙇 The inode number of the root PID namespace is fixed (0xEFFFFFFC)
+and now considered API. It can be used to distinguish the root PID
+namespace from all others. 🙇**
+
+**Use-Case:** tools such as `systemd-detect-virt` exist to determine
+container execution, but typically resolve to checking for
+specific implementations. It would be much nicer and universally
+applicable if such a check could be done generically. It would
+probably suffice to provide an `ioctl()` call on the `pidns` file
+descriptor that reveals this kind of information in some form.
