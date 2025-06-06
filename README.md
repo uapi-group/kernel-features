@@ -375,7 +375,9 @@ user namespace. But this doesn't just lock a single mount or mount subtree
 it locks all mounts in the mount namespace, i.e., the mount table cannot be
 altered.
 
-### Add `OPEN_TREE_CLEAR` flag to `open_tree()`
+### Allow creating idmapped mounts from idmapped mounts
+
+[x] Allow creating idmapped mounts from idmapped mounts
 
 Add a new `OPEN_TREE_CLEAR` flag to `open_tree()` that can only be
 used in conjunction with `OPEN_TREE_CLONE`. When specified it will clear
@@ -390,6 +392,8 @@ locked if it propagates across user namespaces.
 This is useful to get a new, clear mount and also allows the caller to
 create a new detached mount with an idmapping attached to the mount. Iow,
 the caller may idmap the mount afterwards.
+
+**🙇 `c4a16820d901 ("fs: add open_tree_attr()")` 🙇**
 
 **Use-Case:** A user may already use an idmapped mount for their home
 directory. And once a mount has been idmapped the idmapping cannot be
