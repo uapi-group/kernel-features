@@ -10,32 +10,6 @@ associated problem space.
 point that out explicitly and clearly in the associated patches and Cc
 `Christian Brauner <brauner (at) kernel (dot) org`.**
 
-### Mount a subdirectory instead of the top-level directory
-
-[x] Mount a subdirectory instead of the top-level directory
-
-Ability to mount a subdirectory of a regular file system instead of
-the top-level directory. E.e. for a file system `/dev/sda1` which
-contains a sub-directory `/foobar` mount `/foobar` without having
-to mount its parent directory first. Consider something like this:
-
-```
-mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar
-```
-
-(This is of course already possible via some mount namespacing
-shenanigans, but this requires namespacing to be available, and is
-not precisely obvious to implement. Explicit kernel support at mount
-time would be much preferable.)
-
-**🙇 `c5c12f871a30 ("fs: create detached mounts from detached mounts")` 🙇**
-
-**Use-Case:** `systemd-homed` currently mounts a sub-directory of
-the per-user LUKS volume as the user's home directory (and not the
-root directory of the per-user LUKS volume's file system!), and in
-order to implement this invisibly from the host side requires a
-complex mount namespace exercise.
-
 ### inotify() events for BSD file locks
 
 BSD file locks (i.e. `flock()`, as opposed to POSIX `F_SETLK` and
@@ -247,26 +221,6 @@ to use `pidfd`s to remove PID recycling security issues, but
 currently cannot as it also needs to generically wait for such
 unexpected children.
 
-### Mount notifications without rescanning of `/proc/self/mountinfo`
-
-[x] Mount notifications without rescanning of `/proc/self/mountinfo`
-
-Mount notifications that do not require continuous rescanning of
-`/proc/self/mountinfo`. Currently, if a program wants to track
-mounts established on the system it can receive `poll()`able
-events via a file descriptor to `/proc/self/mountinfo`. When
-receiving them it needs to rescan the file from the top and
-compare it with the previous scan. This is both slow and
-racy. It's slow on systems with a large number of mounts as the
-cost for re-scanning the table has to be paid for every change to
-the mount table. It's racy because quickly added and removed
-mounts might not be noticed.
-
-**🙇 `0f46d81f2bce ("fanotify: notify on mount attach and detach")` 🙇**
-
-**Use-Case:** `systemd` tracks the mount table to integrate the mounts
-into it own dependency management.
-
 ### Asynchronous `close()`
 
 An asynchronous or forced `close()`, that guarantees that
@@ -374,51 +328,6 @@ having to have the mount namespace of the container be owned by an ancestor
 user namespace. But this doesn't just lock a single mount or mount subtree
 it locks all mounts in the mount namespace, i.e., the mount table cannot be
 altered.
-
-### Allow creating idmapped mounts from idmapped mounts
-
-[x] Allow creating idmapped mounts from idmapped mounts
-
-Add a new `OPEN_TREE_CLEAR` flag to `open_tree()` that can only be
-used in conjunction with `OPEN_TREE_CLONE`. When specified it will clear
-all mount properties from that mount including the mount's idmapping.
-Requires the caller to be `ns_capable(mntns->user_ns)`. If idmapped mounts
-are encountered the caller must be `ns_capable(sb->user_ns, CAP_SYS_ADMIN)`
-in the filesystems user namespace.
-
-Locked mount properties cannot be changed. A mount's idmapping becomes
-locked if it propagates across user namespaces.
-
-This is useful to get a new, clear mount and also allows the caller to
-create a new detached mount with an idmapping attached to the mount. Iow,
-the caller may idmap the mount afterwards.
-
-**🙇 `c4a16820d901 ("fs: add open_tree_attr()")` 🙇**
-
-**Use-Case:** A user may already use an idmapped mount for their home
-directory. And once a mount has been idmapped the idmapping cannot be
-changed anymore. This allows for simple semantics and allows to avoid
-lifetime complexity in order to account for scenarios where concurrent
-readers or writers might still use a given user namespace while it is about
-to be changed.
-But this poses a problem when the user wants to attach an idmapping to
-a mount that is already idmapped. The new flag allows to solve this
-problem. A sufficiently privileged user such as a container manager can
-create a user namespace for the container which expresses the desired
-ownership. Then they can create a new detached mount without any prior
-mount properties via OPEN_TREE_CLEAR and then attach the idmapping to this
-mount.
-
-### Require a user namespace to have an idmapping when attached
-
-[x] Require a user namespace to have an idmapping when attached
-
-Enforce that the user namespace about to be attached to a mount must
-have an idmapping written.
-
-**🙇 `dacfd001eaf2 ("fs/mnt_idmapping.c: Return -EINVAL when no map is written")` 🙇**
-
-**Use-Case:** Tighten the semantics.
 
 ### Extend `setns()` to allow attaching to all new namespaces of a process
 
@@ -591,77 +500,6 @@ different sources and it should not be possible to generate a
 system extension with a key pair that is supposed to be good for
 container images only.
 
-### Make statx() on a pidfd return additional info
-
-Make statx() on a pidfd return additional recognizable identifiers in
-`.stx_btime`.
-
-**🙇 `cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs` 🙇**
-
-It would be fantastic if issuing statx() on any pidfd would return
-the start time of the process in `.stx_btime` even after the process
-died.
-
-These fields should in particular be queriable *after* the process
-already exited and has been reaped, i.e. after its PID has already
-been recycled.
-
-**Usecase:** In systemd we maintain lists of processes in a hash
-table. Right now, the key is the PID, but this is less than ideal
-because of PID recycling. By being able to use the `.stx_btime`
-and/or `.stx_ino` fields instead would be perfect to safely
-identify, track and compare process even after they ceased to exist.
-
-### API to determine the parent process ID of a pidfd
-
-[x] API to determine the parent process ID of a pidfd
-
-An API to determine the parent process ID (ppid) of a pidfd would be
-good.
-
-This information is relevant to code dealing with pidfds, since if
-the ppid of a pidfd matches the process own pid it can call
-`waitid()` on the process, if it doesn't it cannot and such a call
-would fail. It would be very useful if this could be determined
-easily before even calling that syscall.
-
-**🙇 `cdda1f26e74b ("pidfd: add ioctl to retrieve pid info")` 🙇**
-
-**Usecase:** systemd manages a multitude of processes, most of which
-are its own children, but many which are not. It would be great if
-we could easily determine whether it is worth waiting for
-`SIGCHLD`/`waitid()` on them or whether waiting for `POLLIN` on
-them is the only way to get exit notification.
-
-### Set `comm` field before `exec()`
-
-[x] Set `comm` field before `exec()`
-
-There should be a way to control the process' `comm` field if
-started via `fexecve()`/`execveat()`.
-
-Right now, when `fexecve()`/`execveat()` is used, the `comm` field
-(i.e. `/proc/self/comm`) contains a name derived of the numeric fd,
-which breaks `ps -C …` and various other tools.  In particular when
-the fd was opened with `O_CLOEXEC`, the number of the fd in the old
-process is completely meaningless.
-
-The goal is add a way to tell `fexecve()`/`execveat()` what Name to use.
-
-Since `comm` is under user control anyway (via `PR_SET_NAME`), it
-should be safe to also make it somehow configurable at fexecve()
-time.
-
-See https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294,
-https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81.
-
-**🙇 `543841d18060 ("exec: fix up /proc/pid/comm in the execveat(AT_EMPTY_PATH) case")` 🙇**
-
-**Usecase:** In systemd we generally would prefer using `fexecve()`
-to safely and race-freely invoke processes, but the fact that `comm`
-is useless after invoking a process that way makes the call
-unfortunately hard to use for systemd.
-
 ### Path-based ACL management in an LSM hook
 
 The LSM module API should have the ability to do path-based (not
@@ -790,16 +628,6 @@ Add an option to go from individual thread to thread-group leader.
 **Use-Case:** Allow for a race free way to go from individual thread
 to thread-group leader pidfd.
 
-### Namespace ioctl to translate a PID between PID namespaces
-
-[x] Namespace ioctl to translate a PID between PID namespaces
-
-**🙇 `ca567df74a28a9fb368c6b2d93e864113f73f5c2 ("nsfs: add pid translation ioctls")` 🙇**
-
-**Use-Case:** This makes it possible to e.g., figure out what a given PID in
-a PID namespace corresponds to in the caller's PID namespace. For example, to
-figure out what the PID of PID 1 inside of a given PID namespace is.
-
 ### Useful handling of LSM denials on SCM_RIGHTS
 
 Right now if some LSM such as SELinux denies an `AF_UNIX` socket peer
@@ -838,6 +666,177 @@ on received messages.
 ---
 
 ## Finished Items
+
+### Namespace ioctl to translate a PID between PID namespaces
+
+[x] Namespace ioctl to translate a PID between PID namespaces
+
+**🙇 `ca567df74a28a9fb368c6b2d93e864113f73f5c2 ("nsfs: add pid translation ioctls")` 🙇**
+
+**Use-Case:** This makes it possible to e.g., figure out what a given PID in
+a PID namespace corresponds to in the caller's PID namespace. For example, to
+figure out what the PID of PID 1 inside of a given PID namespace is.
+
+### API to determine the parent process ID of a pidfd
+
+[x] API to determine the parent process ID of a pidfd
+
+An API to determine the parent process ID (ppid) of a pidfd would be
+good.
+
+This information is relevant to code dealing with pidfds, since if
+the ppid of a pidfd matches the process own pid it can call
+`waitid()` on the process, if it doesn't it cannot and such a call
+would fail. It would be very useful if this could be determined
+easily before even calling that syscall.
+
+**🙇 `cdda1f26e74b ("pidfd: add ioctl to retrieve pid info")` 🙇**
+
+**Usecase:** systemd manages a multitude of processes, most of which
+are its own children, but many which are not. It would be great if
+we could easily determine whether it is worth waiting for
+`SIGCHLD`/`waitid()` on them or whether waiting for `POLLIN` on
+them is the only way to get exit notification.
+
+### Set `comm` field before `exec()`
+
+[x] Set `comm` field before `exec()`
+
+There should be a way to control the process' `comm` field if
+started via `fexecve()`/`execveat()`.
+
+Right now, when `fexecve()`/`execveat()` is used, the `comm` field
+(i.e. `/proc/self/comm`) contains a name derived of the numeric fd,
+which breaks `ps -C …` and various other tools.  In particular when
+the fd was opened with `O_CLOEXEC`, the number of the fd in the old
+process is completely meaningless.
+
+The goal is add a way to tell `fexecve()`/`execveat()` what Name to use.
+
+Since `comm` is under user control anyway (via `PR_SET_NAME`), it
+should be safe to also make it somehow configurable at fexecve()
+time.
+
+See https://github.com/systemd/systemd/commit/35a926777e124ae8c2ac3cf46f44248b5e147294,
+https://github.com/systemd/systemd/commit/8939eeae528ef9b9ad2a21995279b76d382d5c81.
+
+**🙇 `543841d18060 ("exec: fix up /proc/pid/comm in the execveat(AT_EMPTY_PATH) case")` 🙇**
+
+**Usecase:** In systemd we generally would prefer using `fexecve()`
+to safely and race-freely invoke processes, but the fact that `comm`
+is useless after invoking a process that way makes the call
+unfortunately hard to use for systemd.
+### Make statx() on a pidfd return additional info
+
+Make statx() on a pidfd return additional recognizable identifiers in
+`.stx_btime`.
+
+**🙇 `cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs` 🙇**
+
+It would be fantastic if issuing statx() on any pidfd would return
+the start time of the process in `.stx_btime` even after the process
+died.
+
+These fields should in particular be queriable *after* the process
+already exited and has been reaped, i.e. after its PID has already
+been recycled.
+
+**Usecase:** In systemd we maintain lists of processes in a hash
+table. Right now, the key is the PID, but this is less than ideal
+because of PID recycling. By being able to use the `.stx_btime`
+and/or `.stx_ino` fields instead would be perfect to safely
+identify, track and compare process even after they ceased to exist.
+
+### Allow creating idmapped mounts from idmapped mounts
+
+[x] Allow creating idmapped mounts from idmapped mounts
+
+Add a new `OPEN_TREE_CLEAR` flag to `open_tree()` that can only be
+used in conjunction with `OPEN_TREE_CLONE`. When specified it will clear
+all mount properties from that mount including the mount's idmapping.
+Requires the caller to be `ns_capable(mntns->user_ns)`. If idmapped mounts
+are encountered the caller must be `ns_capable(sb->user_ns, CAP_SYS_ADMIN)`
+in the filesystems user namespace.
+
+Locked mount properties cannot be changed. A mount's idmapping becomes
+locked if it propagates across user namespaces.
+
+This is useful to get a new, clear mount and also allows the caller to
+create a new detached mount with an idmapping attached to the mount. Iow,
+the caller may idmap the mount afterwards.
+
+**🙇 `c4a16820d901 ("fs: add open_tree_attr()")` 🙇**
+
+**Use-Case:** A user may already use an idmapped mount for their home
+directory. And once a mount has been idmapped the idmapping cannot be
+changed anymore. This allows for simple semantics and allows to avoid
+lifetime complexity in order to account for scenarios where concurrent
+readers or writers might still use a given user namespace while it is about
+to be changed.
+But this poses a problem when the user wants to attach an idmapping to
+a mount that is already idmapped. The new flag allows to solve this
+problem. A sufficiently privileged user such as a container manager can
+create a user namespace for the container which expresses the desired
+ownership. Then they can create a new detached mount without any prior
+mount properties via OPEN_TREE_CLEAR and then attach the idmapping to this
+mount.
+
+### Require a user namespace to have an idmapping when attached
+
+[x] Require a user namespace to have an idmapping when attached
+
+Enforce that the user namespace about to be attached to a mount must
+have an idmapping written.
+
+**🙇 `dacfd001eaf2 ("fs/mnt_idmapping.c: Return -EINVAL when no map is written")` 🙇**
+
+**Use-Case:** Tighten the semantics.
+
+### Mount notifications without rescanning of `/proc/self/mountinfo`
+
+[x] Mount notifications without rescanning of `/proc/self/mountinfo`
+
+Mount notifications that do not require continuous rescanning of
+`/proc/self/mountinfo`. Currently, if a program wants to track
+mounts established on the system it can receive `poll()`able
+events via a file descriptor to `/proc/self/mountinfo`. When
+receiving them it needs to rescan the file from the top and
+compare it with the previous scan. This is both slow and
+racy. It's slow on systems with a large number of mounts as the
+cost for re-scanning the table has to be paid for every change to
+the mount table. It's racy because quickly added and removed
+mounts might not be noticed.
+
+**🙇 `0f46d81f2bce ("fanotify: notify on mount attach and detach")` 🙇**
+
+**Use-Case:** `systemd` tracks the mount table to integrate the mounts
+into it own dependency management.
+
+### Mount a subdirectory instead of the top-level directory
+
+[x] Mount a subdirectory instead of the top-level directory
+
+Ability to mount a subdirectory of a regular file system instead of
+the top-level directory. E.e. for a file system `/dev/sda1` which
+contains a sub-directory `/foobar` mount `/foobar` without having
+to mount its parent directory first. Consider something like this:
+
+```
+mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar
+```
+
+(This is of course already possible via some mount namespacing
+shenanigans, but this requires namespacing to be available, and is
+not precisely obvious to implement. Explicit kernel support at mount
+time would be much preferable.)
+
+**🙇 `c5c12f871a30 ("fs: create detached mounts from detached mounts")` 🙇**
+
+**Use-Case:** `systemd-homed` currently mounts a sub-directory of
+the per-user LUKS volume as the user's home directory (and not the
+root directory of the per-user LUKS volume's file system!), and in
+order to implement this invisibly from the host side requires a
+complex mount namespace exercise.
 
 ### Unmounting of obstructed mounts
 
