@@ -10,6 +10,16 @@ associated problem space.
 point that out explicitly and clearly in the associated patches and Cc
 `Christian Brauner <brauner (at) kernel (dot) org`.**
 
+### xattrs for pidfd
+
+Since pidfds have been moved to a separate pidfs filesystem it is easy
+to add support for xattrs on pidfds. That could be valuable to store
+meta information along the pidfd. Storing an xattr should probably make
+the pidfd automatically persistent, i.e., the reference for the dentry
+is only put once the task is reaped.
+
+**Use-Case:** Store meta information alongside pidfds.
+
 ### inotify() events for BSD file locks
 
 BSD file locks (i.e. `flock()`, as opposed to POSIX `F_SETLK` and
