@@ -10,6 +10,14 @@ associated problem space.
 point that out explicitly and clearly in the associated patches and Cc
 `Christian Brauner <brauner (at) kernel (dot) org`.**
 
+### filesystem-based dm-verity
+
+Implement dm-verity support directly in filesystems. This could only
+just be an erofs specific thing which is where my main interest lies.
+
+**Use-Case:** Enable unprivileged filesystem mounts. Get the full
+benefits of dm-verity without having to use device mapper at all.
+
 ### xattrs for pidfd
 
 Since pidfds have been moved to a separate pidfs filesystem it is easy
