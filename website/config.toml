@@ -31,3 +31,8 @@ theme = "hugo-book"
   BookCommitPath = 'commit'
   BookEditPath = 'edit/main'
   BookIndexPage = 'README.md'
+
+[modules]
+  [[module.mounts]]
+    source = '../README.md'
+    target = 'content/_index.md'
