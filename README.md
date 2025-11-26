@@ -10,6 +10,45 @@ associated problem space.
 point that out explicitly and clearly in the associated patches and Cc
 `Christian Brauner <brauner (at) kernel (dot) org`.**
 
+### Dynamic No New Privileges (NNP) via bpf
+
+On newer systems the use of privilege escalating binaries (suid, sgid,
+file capabilities) can be avoided. This model is illustrated in
+systemd's `run0` tool.
+
+So it is possible to turn on `PR_SET_NO_NEW_PRIVS` (NNP) for systemd
+itself and thus for every process on the system. However, that breaks
+sandboxed workloads. Sandboxed workloads such as containers may run
+a single process without a full-fledged daemon that could supervise
+privileged operations. In such cases executing privilege escalating
+binaries must be allowed.
+
+Ideally sandboxes that require execution of privilege escalating
+binaries must use a user namespace with a non-identity idmapping.
+
+Instead of revamping the fairly inflexible NNP implementation, execution
+of privilege escalating binaries should be supervised by a bpf LSM.
+
+When a privilege escalating binary is executed in the initial user
+namespace the bpf LSM program will cause the kernel to skip elevating
+privileges and instead execute the binary with the caller's privileges.
+This is equivalent to the NNP behavior.
+
+If a privilege escalating binary is executed in a non-initial user
+namespace the bpf LSM program will allow the kernel to escalate the
+caller's privileges to a higher privilege level.
+
+This will allow unprivileged containers to execute privilege escalating
+binaries but completely isolate regular services from doing so.
+
+This can of course be configurable on a per-service basis if needed.
+
+This will require hooking up a new security hook into the kernel's exec
+codepath.
+
+**Use-Case:** Wean all of userspace off of privilege escalating
+binaries.
+
 ### xattrs for pidfd
 
 Since pidfds have been moved to a separate pidfs filesystem it is easy
