@@ -29,7 +29,7 @@ theme = "hugo-book"
   BookPortableLinks = true
   BookRepo = 'https://github.com/uapi-group/kernel-features'
   BookCommitPath = 'commit'
-  BookEditPath = 'edit/main'
+  BookEditLink = '{{ .Site.Params.BookRepo }}/edit/main/{{ .Path }}'
   BookIndexPage = 'README.md'
 
 [modules]
