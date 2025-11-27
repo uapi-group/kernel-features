@@ -7,15 +7,6 @@ theme = "hugo-book"
   name = "⬅️  Back to top"
   url = "https://uapi-group.org/"
   weight = 1
-[[menu.before]]
-  name = "⸻"
-  weight = 2
-
-# Uncomment to show second separator after more content files were added
-#
-#[[menu.after]]
-#  name = "⸻"
-#  weight = 10
 
 [[menu.after]]
   name = "Collaborate on Github"
