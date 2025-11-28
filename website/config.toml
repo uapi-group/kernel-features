@@ -22,6 +22,7 @@ theme = "hugo-book"
   BookCommitPath = 'commit'
   BookEditLink = '{{ .Site.Params.BookRepo }}/edit/main/{{ .Path }}'
   BookIndexPage = 'README.md'
+  BookTheme = 'auto'
 
 [modules]
   [[module.mounts]]
