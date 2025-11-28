@@ -1,0 +1,5 @@
+nav>ul:last-of-type>li:last-child::before {
+  content: "⸻";
+  display: inline-block;
+  margin: 0.5em 0;
+}

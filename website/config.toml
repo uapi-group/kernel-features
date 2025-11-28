@@ -5,17 +5,8 @@ theme = "hugo-book"
 
 [[menu.before]]
   name = "⬅️  Back to top"
-  url = "https://uapi-group.org/"
+  url = "/.."
   weight = 1
-[[menu.before]]
-  name = "⸻"
-  weight = 2
-
-# Uncomment to show second separator after more content files were added
-#
-#[[menu.after]]
-#  name = "⸻"
-#  weight = 10
 
 [[menu.after]]
   name = "Collaborate on Github"
@@ -29,8 +20,9 @@ theme = "hugo-book"
   BookPortableLinks = true
   BookRepo = 'https://github.com/uapi-group/kernel-features'
   BookCommitPath = 'commit'
-  BookEditPath = 'edit/main'
+  BookEditLink = '{{ .Site.Params.BookRepo }}/edit/main/{{ .Path }}'
   BookIndexPage = 'README.md'
+  BookTheme = 'auto'
 
 [modules]
   [[module.mounts]]
