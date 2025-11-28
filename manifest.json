@@ -1,14 +1,14 @@
 {
   "name": "UAPI Group Kernel Feature Ideas",
   "short_name": "UAPI Group Kernel Feature Ideas",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/kernel-features/",
+  "scope": "/kernel-features/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/kernel-features/favicon.svg",
       "sizes": "512x512"
     }
   ]
