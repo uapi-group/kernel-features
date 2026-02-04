@@ -6,9 +6,13 @@ on this list as being implementation requests. Some of the ideas on this list
 are rather rough and unrefined. They serve as entry points for exploring the
 associated problem space.
 
-**When implementing ideas on this list or ideas inspired by this list please
-point that out explicitly and clearly in the associated patches and Cc
-`Christian Brauner <brauner (at) kernel (dot) org`.**
+* **When implementing ideas on this list or ideas inspired by this list
+  please point that out explicitly and clearly in the associated patches
+  and Cc `Christian Brauner <brauner (at) kernel (dot) org`.**
+
+* Move the item you are working to the In-Progress section.
+  Please add your github handle or mail address to the issue so we can
+  ping you.
 
 ## In-Progress
 
