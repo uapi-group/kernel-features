@@ -63,6 +63,22 @@ Since `pivot_root()` only takes path arguments the new rootfs would need to
 be passed via `/proc/<pid>/fd/<nr>`. In the long run we should add a new
 `pivot_root()` syscall operating on file descriptors instead of paths.
 
+### Query mount information via file descriptor with `statmount()`
+
+Extend `struct mnt_id_req` to accept a file descriptor and introduce
+`STATMOUNT_BY_FD` flag. When a valid fd is provided and `STATMOUNT_BY_FD`
+is set, `statmount()` returns mount info about the mount the fd is on.
+
+This works even for "unmounted" mounts (mounts that have been unmounted using
+`umount2(mnt, MNT_DETACH)`), if you have access to a file descriptor on that
+mount. These unmounted mounts will have no mountpoint and no valid mount
+namespace, so `STATMOUNT_MNT_POINT` and `STATMOUNT_MNT_NS_ID` are unset in
+`statmount.mask` for such mounts.
+
+**Use-Case:** Query mount information directly from a file descriptor without
+needing the mount ID, which is particularly useful for detached or unmounted
+mounts.
+
 ---
 
 ### TODO
