@@ -6,9 +6,114 @@ on this list as being implementation requests. Some of the ideas on this list
 are rather rough and unrefined. They serve as entry points for exploring the
 associated problem space.
 
-**When implementing ideas on this list or ideas inspired by this list please
-point that out explicitly and clearly in the associated patches and Cc
-`Christian Brauner <brauner (at) kernel (dot) org`.**
+* **When implementing ideas on this list or ideas inspired by this list
+  please point that out explicitly and clearly in the associated patches
+  and Cc `Christian Brauner <brauner (at) kernel (dot) org`.**
+
+* Move the item you are working to the In-Progress section.
+  Please add your github handle or mail address to the issue so we can
+  ping you.
+
+## In-Progress
+
+### Ability to put user xattrs on `S_IFSOCK` socket entrypoint inodes in the file system
+
+Currently, the kernel only allows extended attributes in the
+`user.*` namespace to be attached to directory and regular file
+inodes. It would be tremendously useful to allow them to be
+associated with socket inodes, too.
+
+**Usecase:** There are two syslog RFCs in use today: RFC3164 and
+RFC5424. `glibc`'s `syslog()` API generates events close to the
+former, but there are programs which would like to generate the
+latter instead (as it supports structured logging). The two formats
+are not backwards compatible: a client sending RFC5424 messages to a
+server only understanding RFC3164 will cause an ugly mess. On Linux
+there's only a single `/dev/log` AF_UNIX/SOCK_DGRAM socket backing
+`syslog()`, which is used in a one-way, fire-and-forget style. This
+means that feature negotation is not really possible within the
+protocol. Various tools bind mount the socket inode into `chroot()`
+and container environments, hence it would be fantastic to associate
+supported feature information directly with the inode (and thus
+outside of the protocol) to make it easy for clients to determine
+which features are spoken on a socket, in a way that survives bind
+mounts. Implementation idea would be that syslog daemons
+implementing RFC5425 could simply set an xattr `user.rfc5424` to `1`
+(or something like that) on the socket inode, and clearly inform
+clients in a natural and simple way that they'd be happy to parse
+the newer format. Also see:
+https://github.com/systemd/systemd/issues/19251 – This idea could
+also be extended to other sockets and other protocols: by setting
+some extended attribute on a socket inodes, services could advertise
+which protocols they support on them. For example D-Bus sockets
+could carry `user.dbus` set to `1`, and Varlink sockets
+`user.varlink` set to `1` and so on.
+
+### Support detached mounts with `pivot_root()`
+
+The new rootfs must currently refer to an attached mount. This restriction
+seems unnecessary. We should allow the new rootfs to refer to a detached
+mount.
+
+This will allow a service- or container manager to create a new rootfs as
+a detached, private mount that isn't exposed anywhere in the filesystem and
+then `pivot_root()` into it.
+
+Since `pivot_root()` only takes path arguments the new rootfs would need to
+be passed via `/proc/<pid>/fd/<nr>`. In the long run we should add a new
+`pivot_root()` syscall operating on file descriptors instead of paths.
+
+### Create mount namespace with custom rootfs via `open_tree()` and `fsmount()`
+
+Add `OPEN_TREE_NAMESPACE` flag to `open_tree()` and `FSMOUNT_NAMESPACE` flag
+to `fsmount()` that create a new mount namespace with the specified mount tree
+as the rootfs mounted on top of a copy of the real rootfs. These return a
+namespace file descriptor instead of a mount file descriptor.
+
+This allows `OPEN_TREE_NAMESPACE` to function as a combined
+`unshare(CLONE_NEWNS)` and `pivot_root()`.
+
+When creating containers the setup usually involves using `CLONE_NEWNS` via
+`clone3()` or `unshare()`. This copies the caller's complete mount namespace.
+The runtime will also assemble a new rootfs and then use `pivot_root()` to
+switch the old mount tree with the new rootfs. Afterward it will recursively
+unmount the old mount tree thereby getting rid of all mounts.
+
+Copying all of these mounts only to get rid of them later is wasteful. With a
+large mount table and a system where thousands of containers are spawned in
+parallel this quickly becomes a bottleneck increasing contention on the
+semaphore.
+
+**Use-Case:** Container runtimes can create an extremely minimal rootfs
+directly:
+
+```c
+fd_mntns = open_tree(-EBADF, "/var/lib/containers/wootwoot", OPEN_TREE_NAMESPACE);
+```
+
+This creates a mount namespace where "wootwoot" has become the rootfs. The
+caller can `setns()` into this new mount namespace and assemble additional
+mounts without copying and destroying the entire parent mount table.
+
+### Query mount information via file descriptor with `statmount()`
+
+Extend `struct mnt_id_req` to accept a file descriptor and introduce
+`STATMOUNT_BY_FD` flag. When a valid fd is provided and `STATMOUNT_BY_FD`
+is set, `statmount()` returns mount info about the mount the fd is on.
+
+This works even for "unmounted" mounts (mounts that have been unmounted using
+`umount2(mnt, MNT_DETACH)`), if you have access to a file descriptor on that
+mount. These unmounted mounts will have no mountpoint and no valid mount
+namespace, so `STATMOUNT_MNT_POINT` and `STATMOUNT_MNT_NS_ID` are unset in
+`statmount.mask` for such mounts.
+
+**Use-Case:** Query mount information directly from a file descriptor without
+needing the mount ID, which is particularly useful for detached or unmounted
+mounts.
+
+---
+
+### TODO
 
 ### xattrs for pidfd
 
@@ -376,20 +481,6 @@ Namespace-able loop and block devices, usable inside user namespaces.
 **Use-Case:** Allow mounting images inside nspawn containers, and using
 RootImage= and friends in the systemd user manager.
 
-### Support detached mounts with `pivot_root()`
-
-The new rootfs must currently refer to an attached mount. This restriction
-seems unnecessary. We should allow the new rootfs to refer to a detached
-mount.
-
-This will allow a service- or container manager to create a new rootfs as
-a detached, private mount that isn't exposed anywhere in the filesystem and
-then `pivot_root()` into it.
-
-Since `pivot_root()` only takes path arguments the new rootfs would need to
-be passed via `/proc/<pid>/fd/<nr>`. In the long run we should add a new
-`pivot_root()` syscall operating on file descriptors instead of paths.
-
 ### Device cgroup guard to allow `mknod()` in non-initial userns
 
 If a container manager restricts its unprivileged (user namespaced)
@@ -531,39 +622,6 @@ of the service manager, hence doing the movement is subject to races
 in case the process dies and its PID is quickly recycled. (This
 assumes systemd can acquire a pidfd of the foreign process without
 races, for example via `SCM_PIDFD` and `SO_PEERPIDFD` or similar.)
-
-### Ability to put user xattrs on `S_IFSOCK` socket entrypoint inodes in the file system
-
-Currently, the kernel only allows extended attributes in the
-`user.*` namespace to be attached to directory and regular file
-inodes. It would be tremendously useful to allow them to be
-associated with socket inodes, too.
-
-**Usecase:** There are two syslog RFCs in use today: RFC3164 and
-RFC5424. `glibc`'s `syslog()` API generates events close to the
-former, but there are programs which would like to generate the
-latter instead (as it supports structured logging). The two formats
-are not backwards compatible: a client sending RFC5424 messages to a
-server only understanding RFC3164 will cause an ugly mess. On Linux
-there's only a single `/dev/log` AF_UNIX/SOCK_DGRAM socket backing
-`syslog()`, which is used in a one-way, fire-and-forget style. This
-means that feature negotation is not really possible within the
-protocol. Various tools bind mount the socket inode into `chroot()`
-and container environments, hence it would be fantastic to associate
-supported feature information directly with the inode (and thus
-outside of the protocol) to make it easy for clients to determine
-which features are spoken on a socket, in a way that survives bind
-mounts. Implementation idea would be that syslog daemons
-implementing RFC5425 could simply set an xattr `user.rfc5424` to `1`
-(or something like that) on the socket inode, and clearly inform
-clients in a natural and simple way that they'd be happy to parse
-the newer format. Also see:
-https://github.com/systemd/systemd/issues/19251 – This idea could
-also be extended to other sockets and other protocols: by setting
-some extended attribute on a socket inodes, services could advertise
-which protocols they support on them. For example D-Bus sockets
-could carry `user.dbus` set to `1`, and Varlink sockets
-`user.varlink` set to `1` and so on.
 
 ### Open thread-group leader via `pidfd_open()`
 
