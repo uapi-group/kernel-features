@@ -1089,3 +1089,17 @@ specific implementations. It would be much nicer and universally
 applicable if such a check could be done generically. It would
 probably suffice to provide an `ioctl()` call on the `pidns` file
 descriptor that reveals this kind of information in some form.
+
+### A way to iterate process file descriptors without /proc
+
+[x] A way to iterate process file descriptors without needing
+`/proc` mounted. Could be an `ioctl()` which takes a buffer,
+size and a `last_fd` argument and fills the buffer with fd 
+numbers after the provided `last_fd`.
+
+**Use-Case**: In `mkosi-sandbox` and other sandboxing tools
+that let you set up an arbitrary sandbox, we can't rely on the
+sandbox having `/proc` mounted, yet we still need to be able to
+do systemd's fd packing algorithm. This requires being able to
+iterate over all inherited fds in a somewhat efficient manner
+without having `/proc` mounted.
