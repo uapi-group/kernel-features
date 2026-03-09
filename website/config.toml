@@ -1,10 +1,13 @@
 baseURL = "https://uapi-group.org/kernel-features"
 languageCode = "en-us"
-title = "UAPI Group Kernel Feature Ideas"
+title = "UAPI Group Kernel Feature Wishlist"
 theme = "hugo-book"
 
+[taxonomies]
+  category = "categories"
+
 [[menu.before]]
-  name = "⬅️  Back to top"
+  name = "Back to top"
   url = "/.."
   weight = 1
 
@@ -14,17 +17,14 @@ theme = "hugo-book"
   weight = 11
 
 [markup.goldmark.renderer]
-  unsafe = true # Allow HTML in md files
+  unsafe = true
 
 [params]
   BookPortableLinks = true
   BookRepo = 'https://github.com/uapi-group/kernel-features'
   BookCommitPath = 'commit'
-  BookEditLink = '{{ .Site.Params.BookRepo }}/edit/main/{{ .Path }}'
-  BookIndexPage = 'README.md'
+  BookEditLink = '{{ .Site.Params.BookRepo }}/edit/main/website/{{ .Path }}'
+  BookSection = '/'
   BookTheme = 'auto'
-
-[modules]
-  [[module.mounts]]
-    source = '../README.md'
-    target = 'content/_index.md'
+  BookSearch = true
+  BookDateFormat = "January 2, 2006"

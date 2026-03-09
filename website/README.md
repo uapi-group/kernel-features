@@ -1,29 +1,41 @@
-# Static website generation for UAPI group specifications
+# Website
 
-This repository uses Hugo for static HTML generation.
-See https://gohugo.io/getting-started/quick-start/ for a brief intro.
+This directory contains the Hugo-based static site for the kernel feature wishlist.
 
-The website uses the [hugo-book](https://github.com/alex-shpak/hugo-book) theme; it is included in this repo as a git submodule.
-After cloning this repo please run `git submodule init; git submodule update`.
-If you check out a branch or tag, make sure the submodule is up to date by running `git submodule update`.
+## Theme
 
-## Website repo layout
+The site uses the [hugo-book](https://github.com/alex-shpak/hugo-book) theme,
+included as a git submodule. After cloning, run:
 
-Content resides in the [content](content/) folder.
-The top-level README.md is soft-linked to `content/_index.md` and serves as index page.
-
-To add content, either put files into the `content/docs` folder.
-Documents there are automatically added to the naviation menu on the left.
-
-## Making changes and testing
-
-You'll need [hugo installed](https://gohugo.io/getting-started/installing/) for rendering changes.
-
-First, make your edits.
-Then, start hugo locally (in the repo's `website` directory)to review your changes:
-
-```shell
-$ hugo server --minify --disableFastRender
+```sh
+git submodule init && git submodule update
 ```
 
-Review your changes at http://localhost:1313/kernel/ .
+## Content layout
+
+```
+content/
+  _index.md              Landing page
+  in-progress/           Features being actively worked on
+  wishlist/              Ideas and proposals
+  completed/             Features merged into the kernel
+```
+
+Each feature is a separate Markdown file with YAML front matter containing
+`title`, `status`, `categories`, and optionally `commit` (for completed items).
+
+## Local development
+
+From this directory:
+
+```sh
+hugo server --minify --disableFastRender
+```
+
+Review at http://localhost:1313/kernel-features/ .
+
+## Build
+
+```sh
+hugo --minify -d ../public
+```
