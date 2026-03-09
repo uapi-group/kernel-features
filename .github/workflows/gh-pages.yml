@@ -13,7 +13,7 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           submodules: true
           fetch-depth: 0
@@ -26,6 +26,20 @@ jobs:
 
       - name: Build
         run: cd website && hugo --minify -d ../public
+
+      - name: Validate front matter
+        run: |
+          errors=0
+          for f in $(find website/content -name '*.md' ! -name '_index.md'); do
+            if ! head -1 "$f" | grep -q '^---$'; then
+              echo "ERROR: $f missing front matter"
+              errors=$((errors + 1))
+            fi
+          done
+          if [ "$errors" -gt 0 ]; then
+            echo "$errors file(s) with missing front matter"
+            exit 1
+          fi
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
