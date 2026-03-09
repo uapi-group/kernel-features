@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Sockets on UAPI Group Kernel Feature Wishlist</title><link>https://uapi-group.org/kernel-features/categories/sockets/</link><description>Recent content in Sockets on UAPI Group Kernel Feature Wishlist</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://uapi-group.org/kernel-features/categories/sockets/index.xml" rel="self" type="application/rss+xml"/><item><title>Ability to put user xattrs on `S_IFSOCK` socket entrypoint inodes in the file system</title><link>https://uapi-group.org/kernel-features/in-progress/ability-to-put-user-xattrs-on-s-ifsock-socket-entrypoint-inodes-in-the-file-system/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/ability-to-put-user-xattrs-on-s-ifsock-socket-entrypoint-inodes-in-the-file-system/</guid><description>&lt;p>Currently, the kernel only allows extended attributes in the
+&lt;code>user.*&lt;/code> namespace to be attached to directory and regular file
+inodes. It would be tremendously useful to allow them to be
+associated with socket inodes, too.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> There are two syslog RFCs in use today: RFC3164 and
+RFC5424. &lt;code>glibc&lt;/code>&amp;rsquo;s &lt;code>syslog()&lt;/code> API generates events close to the
+former, but there are programs which would like to generate the
+latter instead (as it supports structured logging). The two formats
+are not backwards compatible: a client sending RFC5424 messages to a
+server only understanding RFC3164 will cause an ugly mess. On Linux
+there&amp;rsquo;s only a single &lt;code>/dev/log&lt;/code> AF_UNIX/SOCK_DGRAM socket backing
+&lt;code>syslog()&lt;/code>, which is used in a one-way, fire-and-forget style. This
+means that feature negotation is not really possible within the
+protocol. Various tools bind mount the socket inode into &lt;code>chroot()&lt;/code>
+and container environments, hence it would be fantastic to associate
+supported feature information directly with the inode (and thus
+outside of the protocol) to make it easy for clients to determine
+which features are spoken on a socket, in a way that survives bind
+mounts. Implementation idea would be that syslog daemons
+implementing RFC5425 could simply set an xattr &lt;code>user.rfc5424&lt;/code> to &lt;code>1&lt;/code>
+(or something like that) on the socket inode, and clearly inform
+clients in a natural and simple way that they&amp;rsquo;d be happy to parse
+the newer format. Also see:
+&lt;a href="https://github.com/systemd/systemd/issues/19251">https://github.com/systemd/systemd/issues/19251&lt;/a> – This idea could
+also be extended to other sockets and other protocols: by setting
+some extended attribute on a socket inodes, services could advertise
+which protocols they support on them. For example D-Bus sockets
+could carry &lt;code>user.dbus&lt;/code> set to &lt;code>1&lt;/code>, and Varlink sockets
+&lt;code>user.varlink&lt;/code> set to &lt;code>1&lt;/code> and so on.&lt;/p></description></item><item><title>Auxiliary socket message describing the sender's cgroup</title><link>https://uapi-group.org/kernel-features/wishlist/auxiliary-socket-message-describing-the-sender-s-cgroup/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/auxiliary-socket-message-describing-the-sender-s-cgroup/</guid><description>&lt;p>&lt;code>SCM_CGROUPID&lt;/code> or a similar auxiliary socket message, that allows
+receivers to figure out which cgroup a sender is part of.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> &lt;code>systemd-journald&lt;/code> picks up cgroup information from
+logging clients, in order to augment log records and allow
+filtering via this meta-information. In particular it derives
+service identity from that (so that requests such as &amp;ldquo;Show me all
+log messages of service X!&amp;rdquo; can be answered). This is currently
+racy, since it uses &lt;code>SCM_CREDS&lt;/code>&amp;rsquo; &lt;code>.pid&lt;/code> field for this, which it then
+used to load &lt;code>/proc/$PID/cgroup&lt;/code>. In particular for programs that
+log and immediately exit, the cgroup information frequently cannot
+be acquired anymore by &lt;code>systemd-journald&lt;/code>.&lt;/p></description></item><item><title>`SCM_PIDFD` auxiliary socket message</title><link>https://uapi-group.org/kernel-features/completed/scm-pidfd-auxiliary-socket-message/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/scm-pidfd-auxiliary-socket-message/</guid><description>&lt;p>[x] &lt;code>SCM_PIDFD&lt;/code> or similar auxiliary socket message, that is a modern
+version of the &lt;code>SCM_CREDS&lt;/code> message&amp;rsquo;s &lt;code>.pid&lt;/code> field, and provides a
+&lt;code>pidfd&lt;/code> file descriptor to the originating peer process.&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>5e2ff6704a275be00 (&amp;quot;scm: add SO_PASSPIDFD and SCM_PIDFD)&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> security infrastructure (such as PolicyKit) can safely
+reference clients this way without fearing PID
+recycling. &lt;code>systemd-journald&lt;/code> can acquire peer metadata this way in
+a less racy fashion, in particular safe against PID recycling.&lt;/p></description></item><item><title>Filtering on received file descriptors</title><link>https://uapi-group.org/kernel-features/wishlist/filtering-on-received-file-descriptors/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/filtering-on-received-file-descriptors/</guid><description>&lt;p>An alternative to the previous item could be if some form of filtering
+could be enforced on the file descriptors suitable for enqueuing on
+the &lt;code>AF_UNIX&lt;/code> socket. i.e. allow filtering by superblock type or
+similar, so that policies such as &amp;ldquo;only &lt;code>memfd&lt;/code>s are OK to be
+received&amp;rdquo; may be expressed. (BPF?).&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> as above.&lt;/p></description></item><item><title>Take `IP_UNICAST_IF` into account for routing decisions</title><link>https://uapi-group.org/kernel-features/completed/take-ip-unicast-if-into-account-for-routing-decisions/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/take-ip-unicast-if-into-account-for-routing-decisions/</guid><description>&lt;p>[x] &lt;code>IP_UNICAST_IF&lt;/code> should be taken into account for routing decisions
+at UDP &lt;code>connect()&lt;/code> time (currently it isn&amp;rsquo;t, only &lt;code>SO_BINDTOINDEX&lt;/code>
+is, but that does so much more than just that, and one often
+doesn&amp;rsquo;t want that)&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>0e4d354762cefd3e16b4cff8988ff276e45effc4 (&amp;quot;net-next: Fix IP_UNICAST_IF option behavior for connected sockets&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> DNS resolvers that associate DNS configuration with
+specific network interfaces (example: &lt;code>systemd-resolved&lt;/code>) typically
+want to preferably route DNS traffic to the per-interface DNS
+server via that interface, but not make further restrictions on the
+origins or received replies, and all that without
+privileges. &lt;code>IP_UNICAST_IF&lt;/code> fulfills this role fine for TCP, but
+for UDP it is not taken into account for the &lt;code>connect()&lt;/code> routing
+decision.&lt;/p></description></item><item><title>Asynchronous `close()`</title><link>https://uapi-group.org/kernel-features/wishlist/asynchronous-close/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/asynchronous-close/</guid><description>&lt;p>An asynchronous or forced &lt;code>close()&lt;/code>, that guarantees that
+userspace doesn&amp;rsquo;t have to risk blocking for longer periods of time
+when trying to get rid of unwanted file descriptors, possibly
+received via &lt;code>recvmsg()&lt;/code> + &lt;code>SCM_RIGHTS&lt;/code> (see above). Currently,
+&lt;code>close()&lt;/code> of various file descriptors (for example those referring
+to slow storage, e.g. non-responding NFS servers and such) might
+take arbitrary amounts of time, potentially into the minute range
+and more. This makes it risky accepting file descriptors on
+publicly accessible &lt;code>AF_UNIX&lt;/code> sockets, the way like IPC brokers
+(e.g. D-Bus) do it: if a rogue client keeps sending file
+descriptors that because unexpected must be closed immediately it
+might cause the receiving process to effectively crawl, when it is
+busy closing them all. A special form of &lt;code>close()&lt;/code> that simply
+detaches a file descriptor from the file descriptor table without
+blocking on IO in any form would be great to close this issue.&lt;/p></description></item><item><title>`CLOCK_MONOTONIC` network timestamps</title><link>https://uapi-group.org/kernel-features/wishlist/clock-monotonic-network-timestamps/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/clock-monotonic-network-timestamps/</guid><description>&lt;p>Currently network timestamps are exclusively in &lt;code>CLOCK_REALTIME&lt;/code>, even
+though for many (most?) a monotonic clock would be much preferable, as
+calculations become easier when one doesn&amp;rsquo;t have to think about clock
+jumps and similar.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> &lt;code>systemd-journald&lt;/code> collects implicit timestamps via
+&lt;code>AF_UNIX&lt;/code> time-stamping, in &lt;code>CLOCK_REALTIME&lt;/code>, even though for its
+internal logic only monotonic timestamps are used, as log records
+are searched via bisection in ordered tables, that require
+strictly increasing timestamps. In particular during boot (where
+&lt;code>CLOCK_REALTIME&lt;/code> is often not available, stable or subject to
+corrections) it would be good to have reliable, monotonic
+timestamps on all log records.&lt;/p></description></item><item><title>Disabling reception of `SCM_RIGHTS` for `AF_UNIX` sockets</title><link>https://uapi-group.org/kernel-features/completed/disabling-reception-of-scm-rights-for-af-unix-sockets/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/disabling-reception-of-scm-rights-for-af-unix-sockets/</guid><description>&lt;p>[x] Ability to turn off &lt;code>SCM_RIGHTS&lt;/code> reception for &lt;code>AF_UNIX&lt;/code>
+sockets.&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>77cbe1a6d8730a07f99f9263c2d5f2304cf5e830 (&amp;quot;af_unix: Introduce SO_PASSRIGHTS&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>Right now reception of file descriptors is always on when
+a process makes the mistake of invoking &lt;code>recvmsg()&lt;/code> on such a
+socket. This is problematic since &lt;code>SCM_RIGHTS&lt;/code> installs file
+descriptors in the recipient process&amp;rsquo; file descriptor
+table. Getting rid of these file descriptors is not necessarily
+easy, as they could refer to &amp;ldquo;slow-to-close&amp;rdquo; files (think: dirty
+file descriptor referring to a file on an unresponsive NFS server,
+or some device file descriptor), that might cause the recipient to
+block for a longer time when it tries to them. Programs reading
+from an &lt;code>AF_UNIX&lt;/code> socket currently have three options:&lt;/p></description></item><item><title>Race-free creation and opening of non-file inodes</title><link>https://uapi-group.org/kernel-features/wishlist/race-free-creation-and-opening-of-non-file-inodes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/race-free-creation-and-opening-of-non-file-inodes/</guid><description>&lt;p>A way to race-freely create an (non-file) inode and immediately
+open it. For regular files we have open(O_CREAT) for creating a
+new file inode, and returning a pinning fd to it. This is missing
+for other inode types, such as directories, device nodes,
+FIFOs. The lack of such functionality means that when populating a
+directory tree there&amp;rsquo;s always a race involved: the inodes first
+need to be created, and then opened to adjust their
+permissions/ownership/labels/timestamps/acls/xattrs/…, but in the
+time window between the creation and the opening they might be
+replaced by something else. Addressing this race without proper
+APIs is possible (by immediately fstat()ing what was opened, to
+verify that it has the right inode type), but difficult to get
+right. Hence, mkdirat_fd() that creates a directory &lt;em>and&lt;/em> returns
+an O_DIRECTORY fd to it would be great. As would be mknodeat_fd()
+that creates a device node, FIFO or (dead) socket and returns an
+O_PATH fd to it. And of course symlinkat_fd() that creates a
+symlink and returns an O_PATH fd to it.&lt;/p></description></item><item><title>Add process by PIDFD to a cgroup</title><link>https://uapi-group.org/kernel-features/wishlist/add-process-by-pidfd-to-a-cgroup/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/add-process-by-pidfd-to-a-cgroup/</guid><description>&lt;p>At the moment the canonical way to add a process to a cgroup is by
+echoing its PID into the &lt;code>cgroup.procs&lt;/code> attribute in the target
+cgroupfs directory of the cgroup. This is safe as long as the
+process doing so just forked off the process it wants to migrate and
+hence can control that it hasn&amp;rsquo;t been reaped yet, and hence
+guarantees the PID is valid. This is racy however if &amp;ldquo;foreign&amp;rdquo;
+processes shall be moved into the cgroup.&lt;/p></description></item><item><title>Useful handling of LSM denials on SCM_RIGHTS</title><link>https://uapi-group.org/kernel-features/wishlist/useful-handling-of-lsm-denials-on-scm-rights/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/useful-handling-of-lsm-denials-on-scm-rights/</guid><description>&lt;p>Right now if some LSM such as SELinux denies an &lt;code>AF_UNIX&lt;/code> socket peer
+to receive an &lt;code>SCM_RIGHTS&lt;/code> fd the &lt;code>SCM_RIGHTS&lt;/code> fd array will be cut
+short at that point, and &lt;code>MSG_CTRUNC&lt;/code> is set on return of
+&lt;code>recvmsg()&lt;/code>. This is highly problematic behaviour, because it leaves
+the receiver wondering what happened. As per man page &lt;code>MSG_CTRUNC&lt;/code> is
+supposed to indicate that the control buffer was sized too short, but
+suddenly a permission error might result in the exact same flag being
+set. Moreover, the receiver has no chance to determine how many fds
+got originally sent and how many were suppressed.&lt;/p></description></item><item><title>Reasonable EOF on SOCK_SEQPACKET</title><link>https://uapi-group.org/kernel-features/wishlist/reasonable-eof-on-sock-seqpacket/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/reasonable-eof-on-sock-seqpacket/</guid><description>&lt;p>Zero size datagrams cannot be distinguished from EOF on
+&lt;code>SOCK_SEQPACKET&lt;/code>. Both will cause &lt;code>recvmsg()&lt;/code> to return zero.&lt;/p>
+&lt;p>Idea how to improve things: maybe define a new MSG_XYZ flag for this,
+which causes either of the two cases result in some recognizable error
+code returned rather than a 0.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Any code that wants to use &lt;code>SOCK_SEQPACKET&lt;/code> and cannot
+effort disallowing zero sized datagrams from their protocol.&lt;/p></description></item><item><title>Reasonable Handling of SELinux dropping SCM_RIGHTS fds</title><link>https://uapi-group.org/kernel-features/wishlist/reasonable-handling-of-selinux-dropping-scm-rights-fds/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/reasonable-handling-of-selinux-dropping-scm-rights-fds/</guid><description>&lt;p>Currently, if SELinux refuses to let some file descriptor through, it
+will just drop them from the &lt;code>SCM_RIGHTS&lt;/code> array. That&amp;rsquo;s a terrible
+idea, since applications rely on the precise arrangement of the array
+to know which fd is which. By dropping entries silently, these apps
+will all break.&lt;/p>
+&lt;p>Idea how to improve things: leave the elements in the array in place,
+but return a marker instead (i.e. negative integer, maybe &lt;code>-EPERM&lt;/code>) that
+tells userspace that there was an fd, but it was not allowed through.&lt;/p></description></item></channel></rss>

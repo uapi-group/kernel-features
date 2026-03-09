@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Block-Devices on UAPI Group Kernel Feature Wishlist</title><link>https://uapi-group.org/kernel-features/categories/block-devices/</link><description>Recent content in Block-Devices on UAPI Group Kernel Feature Wishlist</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://uapi-group.org/kernel-features/categories/block-devices/index.xml" rel="self" type="application/rss+xml"/><item><title>inotify() events for BSD file locks</title><link>https://uapi-group.org/kernel-features/wishlist/inotify-events-for-bsd-file-locks/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/inotify-events-for-bsd-file-locks/</guid><description>&lt;p>BSD file locks (i.e. &lt;code>flock()&lt;/code>, as opposed to POSIX &lt;code>F_SETLK&lt;/code> and
+friends are inode-focussed, hence would be great if one could get
+asynchronous notification when they are released via inotify.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> udevd probes block devices whenever they pop up to
+create /dev/disk/by-label/* and similar symlinks. Formatting tools
+can temporarily block this behaviour by taking a BSD file lock on
+the block device (as per &lt;a href="https://systemd.io/BLOCK_DEVICE_LOCKING%29">https://systemd.io/BLOCK_DEVICE_LOCKING)&lt;/a>,
+in order to make sure udevd doesn&amp;rsquo;t probe file systems/partition
+tables that are only partially initialized. Currently, udevd uses
+inotify &lt;code>IN_CLOSE_WRITE&lt;/code> notifications to detect whenever
+applications close a block device after writing to it, and
+automatically reprobes the device. This works reasonably OK given
+that block devices are usually closed at the same time as their
+BSD file lock is released, and vice versa. However, this is not
+fully correct: what udevd actually should be watching is the locks
+being released, not the devices being closed.&lt;/p></description></item><item><title>A system call to query information about a mount</title><link>https://uapi-group.org/kernel-features/completed/a-system-call-to-query-information-about-a-mount/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/a-system-call-to-query-information-about-a-mount/</guid><description>&lt;p>[x] Implement a mount-specific companion to &lt;code>statx()&lt;/code> that puts at least the
+following information into &lt;code>struct mount_info&lt;/code>:&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>46eae99ef73302f9fb3dddcd67c374b3dffe8fd6 (&amp;quot;add statmount(2) syscall&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;ul>
+&lt;li>mount flags: &lt;code>MOUNT_ATTR_RDONLY&lt;/code>, &amp;hellip;&lt;/li>
+&lt;li>time flags: &lt;code>MOUNT_ATTR_RELATIME&lt;/code>, &amp;hellip;
+Could probably be combined with mount flags.&lt;/li>
+&lt;li>propagation setting: &lt;code>MS_SHARED)&lt;/code>, &amp;hellip;&lt;/li>
+&lt;li>peer group&lt;/li>
+&lt;li>mnt id of the mount&lt;/li>
+&lt;li>mnt id of the mount&amp;rsquo;s parent&lt;/li>
+&lt;li>owning userns&lt;/li>
+&lt;/ul>
+&lt;p>There&amp;rsquo;s a bit more advanced stuff systemd would really want but which
+I think is misplaced in a mountinfo system call including:&lt;/p></description></item><item><title>Immutable loopback block devices</title><link>https://uapi-group.org/kernel-features/wishlist/immutable-loopback-block-devices/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/immutable-loopback-block-devices/</guid><description>&lt;p>Truly immutable loopback block devices. Right now setting up a
+loopback block device in read-only mode, backed by a read-only
+file (stored on a regular read/write file system), and then
+mounting it with &lt;code>ext4&lt;/code> also in &lt;code>MS_RDONLY&lt;/code>mode &lt;em>will&lt;/em> result in
+changes to the file, quite unexpectedly 🤯. Ideally, if a loopback
+block device is set up in read-only mode this should guarantee
+that the backing file remains unmodified by it.&lt;/p></description></item><item><title>A timeout for the `flock()` syscall</title><link>https://uapi-group.org/kernel-features/wishlist/a-timeout-for-the-flock-syscall/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/a-timeout-for-the-flock-syscall/</guid><description>&lt;p>A timeout for the &lt;code>flock()&lt;/code> syscall. Faking the time-out in userspace
+is nasty: most code does it with &lt;code>alarm()&lt;/code> (or equivalent APIs), but
+that&amp;rsquo;s racy since on a heavily loaded system the timeout might trigger
+before the &lt;code>flock()&lt;/code> call is entered, in particular if short time-outs
+shall be used. More accurate is to do the locking in a short-lived
+child processed, but that&amp;rsquo;s difficult already in C, and almost
+impossible in languages that do not allow &lt;code>fork()&lt;/code> without &lt;code>execve()&lt;/code>.&lt;/p></description></item><item><title>Namespaced loop and block devices</title><link>https://uapi-group.org/kernel-features/wishlist/namespaced-loop-and-block-devices/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/namespaced-loop-and-block-devices/</guid><description>&lt;p>Namespace-able loop and block devices, usable inside user namespaces.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Allow mounting images inside nspawn containers, and using
+RootImage= and friends in the systemd user manager.&lt;/p></description></item><item><title>Race-free mounting of block devices</title><link>https://uapi-group.org/kernel-features/wishlist/race-free-mounting-of-block-devices/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/race-free-mounting-of-block-devices/</guid><description>&lt;p>Introduce a new struct to &lt;code>fsconfig()&lt;/code> as an alternative to the
+&lt;code>source&lt;/code> property. The struct contains at least a pointer to a path,
+possibly a device minor and major, and a diskseq number. The VFS can
+expose a helper that filesystems can call and use the diskseq number
+to verify that the block device they are intending to mount is indeed
+the one they want to mount.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Race-free mounting of block devices.&lt;/p></description></item><item><title>Specification of a keyring for dm-verity volume verification</title><link>https://uapi-group.org/kernel-features/wishlist/specification-of-a-keyring-for-dm-verity-volume-verification/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/specification-of-a-keyring-for-dm-verity-volume-verification/</guid><description>&lt;p>When activating a dm-verity volume allow specifying keyring to
+validate root hash signature against.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> In systemd, we&amp;rsquo;d like to authenticate Portable Service
+images, system extension images, configuration images, container
+images with different keys, as they typically originate from
+different sources and it should not be possible to generate a
+system extension with a key pair that is supposed to be good for
+container images only.&lt;/p></description></item><item><title>`ioctl()` API for `overlayfs`</title><link>https://uapi-group.org/kernel-features/wishlist/ioctl-api-for-overlayfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/ioctl-api-for-overlayfs/</guid><description>&lt;p>&lt;code>overlayfs&lt;/code> should have an &lt;code>ioctl()&lt;/code>-based API (or similar) for
+querying information of the backing file systems/block devices&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> In systemd in various areas we automatically find the
+block device backing the root file system and other file systems
+(Example: &lt;code>systemd-gpt-auto-generator&lt;/code> or &lt;code>bootctl&lt;/code> wull try to find
+auxiliary file systems of the OS image by looking in the GPT
+partition table the root file system is located in). While this
+logic is good enough to find the backing block devices of some more
+complex storage such as dm-crypt, dm-verity or btrfs, once
+&lt;code>overlayfs&lt;/code> is used as backing for the root file system this logic
+does not work anymore. It would be great if there was an API to
+simply query &lt;code>overlayfs&lt;/code> for the superblock information
+(i.e. &lt;code>.st_dev&lt;/code>) of the backing layers.&lt;/p></description></item><item><title>Automatic growing of `btrfs` filesystems</title><link>https://uapi-group.org/kernel-features/wishlist/automatic-growing-of-btrfs-filesystems/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/automatic-growing-of-btrfs-filesystems/</guid><description>&lt;p>An &lt;em>auto-grow&lt;/em> feature in &lt;code>btrfs&lt;/code> would be excellent.&lt;/p>
+&lt;p>If such a mode is enabled, &lt;code>btrfs&lt;/code> would automatically grow a file
+system up to the size of its backing block devices. Example: btrfs
+is created with 200M in size on a block device 2G in size. Once the
+file system is filled up fully, &lt;code>btrfs&lt;/code> would automatically grow the
+file system as need in the increments it needs, up to the 2G that
+the backing block device is in size.&lt;/p></description></item></channel></rss>

@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Wishlist on UAPI Group Kernel Feature Wishlist</title><link>https://uapi-group.org/kernel-features/wishlist/</link><description>Recent content in Wishlist on UAPI Group Kernel Feature Wishlist</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://uapi-group.org/kernel-features/wishlist/index.xml" rel="self" type="application/rss+xml"/><item><title>xattrs for pidfd</title><link>https://uapi-group.org/kernel-features/wishlist/xattrs-for-pidfd/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/xattrs-for-pidfd/</guid><description>&lt;p>Since pidfds have been moved to a separate pidfs filesystem it is easy
+to add support for xattrs on pidfds. That could be valuable to store
+meta information along the pidfd. Storing an xattr should probably make
+the pidfd automatically persistent, i.e., the reference for the dentry
+is only put once the task is reaped.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Store meta information alongside pidfds.&lt;/p></description></item><item><title>`CLONE_PIDFD_AUTOKILL` semantics for PID 1</title><link>https://uapi-group.org/kernel-features/wishlist/clone-pidfd-autokill-semantics-for-pid-1/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/clone-pidfd-autokill-semantics-for-pid-1/</guid><description>&lt;p>Allow obtaining a &lt;code>CLONE_PIDFD_AUTOKILL&lt;/code> pidfd for PID 1. Currently
+PID 1 cannot hand off an autokill pidfd for itself. Allowing this would
+make it possible to create system-death-traps where the lifetime of
+PID 1 is tied to another process. PID 1 creates a &lt;code>CLONE_PIDFD_AUTOKILL&lt;/code>
+pidfd for itself, hands it off to another task, and closes its own copy.
+If that other task exits, PID 1 is taken down.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Tie the lifetime of PID 1 to a critical process such as a
+software TPM or other security-sensitive daemon. This ensures the system
+is brought down if the critical process dies, rather than continuing to
+run in a potentially compromised state.&lt;/p></description></item><item><title>inotify() events for BSD file locks</title><link>https://uapi-group.org/kernel-features/wishlist/inotify-events-for-bsd-file-locks/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/inotify-events-for-bsd-file-locks/</guid><description>&lt;p>BSD file locks (i.e. &lt;code>flock()&lt;/code>, as opposed to POSIX &lt;code>F_SETLK&lt;/code> and
+friends are inode-focussed, hence would be great if one could get
+asynchronous notification when they are released via inotify.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> udevd probes block devices whenever they pop up to
+create /dev/disk/by-label/* and similar symlinks. Formatting tools
+can temporarily block this behaviour by taking a BSD file lock on
+the block device (as per &lt;a href="https://systemd.io/BLOCK_DEVICE_LOCKING%29">https://systemd.io/BLOCK_DEVICE_LOCKING)&lt;/a>,
+in order to make sure udevd doesn&amp;rsquo;t probe file systems/partition
+tables that are only partially initialized. Currently, udevd uses
+inotify &lt;code>IN_CLOSE_WRITE&lt;/code> notifications to detect whenever
+applications close a block device after writing to it, and
+automatically reprobes the device. This works reasonably OK given
+that block devices are usually closed at the same time as their
+BSD file lock is released, and vice versa. However, this is not
+fully correct: what udevd actually should be watching is the locks
+being released, not the devices being closed.&lt;/p></description></item><item><title>Auxiliary socket message describing the sender's cgroup</title><link>https://uapi-group.org/kernel-features/wishlist/auxiliary-socket-message-describing-the-sender-s-cgroup/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/auxiliary-socket-message-describing-the-sender-s-cgroup/</guid><description>&lt;p>&lt;code>SCM_CGROUPID&lt;/code> or a similar auxiliary socket message, that allows
+receivers to figure out which cgroup a sender is part of.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> &lt;code>systemd-journald&lt;/code> picks up cgroup information from
+logging clients, in order to augment log records and allow
+filtering via this meta-information. In particular it derives
+service identity from that (so that requests such as &amp;ldquo;Show me all
+log messages of service X!&amp;rdquo; can be answered). This is currently
+racy, since it uses &lt;code>SCM_CREDS&lt;/code>&amp;rsquo; &lt;code>.pid&lt;/code> field for this, which it then
+used to load &lt;code>/proc/$PID/cgroup&lt;/code>. In particular for programs that
+log and immediately exit, the cgroup information frequently cannot
+be acquired anymore by &lt;code>systemd-journald&lt;/code>.&lt;/p></description></item><item><title>Linking of `O_TMPFILE` files with replacement</title><link>https://uapi-group.org/kernel-features/wishlist/linking-of-o-tmpfile-files-with-replacement/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/linking-of-o-tmpfile-files-with-replacement/</guid><description>&lt;p>Ability to link an &lt;code>O_TMPFILE&lt;/code> file into a directory while &lt;em>replacing&lt;/em> an
+existing file. (Currently there&amp;rsquo;s only the ability to link it in, if the
+file name doesn&amp;rsquo;t exist yet.)&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> there are many programs (e.g. &lt;code>systemd-hostnamed&lt;/code>
+when updating &lt;code>/etc/hostname&lt;/code>) that atomically want to update a
+file, so that either the old or the new version is in place, but
+never a partially updated one. The canonical way to do this is by
+creating a temporary file with the new contents, and then renaming
+it to the filename of the file to update, thus atomically replacing
+it. Currently, the temporary file for this must be created with a
+random name, &lt;code>O_TMPFILE&lt;/code> cannot be used, since for these files
+atomic-replace is not supported, currently.&lt;/p></description></item><item><title>Ability to only open regular files</title><link>https://uapi-group.org/kernel-features/wishlist/ability-to-only-open-regular-files/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/ability-to-only-open-regular-files/</guid><description>&lt;p>&lt;code>O_REGULAR&lt;/code> (inspired by the existing &lt;code>O_DIRECTORY&lt;/code> flag for
+&lt;code>open()&lt;/code>), which opens a file only if it is of type &lt;code>S_IFREG&lt;/code>.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> this would be very useful to write secure programs
+that want to avoid being tricked into opening device nodes with
+special semantics while thinking they operate on regular
+files. This is particularly relevant as many device nodes (or even
+FIFOs) come with blocking I/O (or even blocking &lt;code>open()&lt;/code>!) by
+default, which is not expected from regular files backed by &amp;ldquo;fast&amp;rdquo;
+disk I/O. Consider implementation of a naive web browser which is
+pointed to &lt;code>file://dev/zero&lt;/code>, not expecting an endless amount of
+data to read.&lt;/p></description></item><item><title>Unlinking via two file descriptors</title><link>https://uapi-group.org/kernel-features/wishlist/unlinking-via-two-file-descriptors/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/unlinking-via-two-file-descriptors/</guid><description>&lt;p>&lt;code>unlinkat3(dir_fd, name, inode_fd)&lt;/code>: taking one file descriptor
+for the directory to remove a file in, and another one referring
+to the inode of the filename to remove. This call should only
+succeed if the specified filename still refers to the specified
+inode.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> code that operates on a well-know path that might be
+shared by multiple programs that jointly manage it might want to
+safely remove a filename under the guarantee it still refers to
+the expected inode. As a specific example, consider lock files,
+that should be cleaned up only if they still refer to the assumed
+owner&amp;rsquo;s instance, but leave the file in place if another process
+already took over the filename.&lt;/p></description></item><item><title>Determining if a mount point belongs to the current user</title><link>https://uapi-group.org/kernel-features/wishlist/determining-if-a-mount-point-belongs-to-the-current-user/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/determining-if-a-mount-point-belongs-to-the-current-user/</guid><description>&lt;p>Ability to determine if a mount point belongs to the current user
+namespace, in order to check if there&amp;rsquo;s a chance a process can
+safely unmount it (as that only works for mounts owned by the same
+user namespaces — or one further down the tree, but not any up the
+tree). A simple, additional field in &lt;code>/proc/self/mountinfo&lt;/code>
+container the owning user namespace ID would probably already
+suffice.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> the &lt;code>systemd&lt;/code> system and service manager tries to unmount
+all established mounts on shutdown. Inside of container
+environments where specific mounts are established by the
+container manager (and not the payload itself) this will
+ultimately fail if user namespaces are enabled. In order to clean
+up the shutdown logic it would be very good to be able to
+determine whether a specific mount could even possibly be
+unmounted or whether it&amp;rsquo;s not worth the effort to include the
+unmount in the system shutdown transaction.&lt;/p></description></item><item><title>Read-only propagation of mounts</title><link>https://uapi-group.org/kernel-features/wishlist/read-only-propagation-of-mounts/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/read-only-propagation-of-mounts/</guid><description>&lt;p>A way to mark mounts that receive mount propagation events from
+elsewhere so that these propagated mounts are established
+read-only implicitly. Right now, if a mount receives a mount
+propagation event it will have the exact same &lt;code>MS_RDONLY&lt;/code>,
+&lt;code>MS_NODEV&lt;/code>, … flags as it has where it originated. It would be
+very useful if an &lt;code>MS_RDONLY&lt;/code> could be ORed into the mount flags
+automatically whenever propagated elsewhere.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> various mount namespace based sandboxes
+(e.g. &lt;code>systemd&lt;/code>&amp;rsquo;s &lt;code>ProtectSystem=&lt;/code> option) mark large parts of the
+host file hierarchy read-only via mounting it
+&lt;code>MS_RDONLY|MS_BIND|MS_REMOUNT&lt;/code>, but generally intend to leave the
+file hierarchy besides that the way it is, and that includes they
+typically still want to be able to receive mount events to
+directories such as &lt;code>/mnt/&lt;/code> and &lt;code>/media/&lt;/code> in these sandboxed
+environments. Right now, any such propagation then happens in
+writable mode, even if the file hierarchy otherwise is almost
+entirely read-only. To close this gap it would be great if such
+propagated mounts could implicitly gain &lt;code>MS_RDONLY&lt;/code> as they are
+propagated.&lt;/p></description></item><item><title>Filtering on received file descriptors</title><link>https://uapi-group.org/kernel-features/wishlist/filtering-on-received-file-descriptors/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/filtering-on-received-file-descriptors/</guid><description>&lt;p>An alternative to the previous item could be if some form of filtering
+could be enforced on the file descriptors suitable for enqueuing on
+the &lt;code>AF_UNIX&lt;/code> socket. i.e. allow filtering by superblock type or
+similar, so that policies such as &amp;ldquo;only &lt;code>memfd&lt;/code>s are OK to be
+received&amp;rdquo; may be expressed. (BPF?).&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> as above.&lt;/p></description></item><item><title>Excluding processes watched via `pidfd` from `waitid(P_ALL, …)`</title><link>https://uapi-group.org/kernel-features/wishlist/excluding-processes-watched-via-pidfd-from-waitid-p-all/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/excluding-processes-watched-via-pidfd-from-waitid-p-all/</guid><description>&lt;p>&lt;strong>Use-Case:&lt;/strong> various programs use &lt;code>waitid(P_ALL, …)&lt;/code> to collect exit
+information of exited child processes. In particular PID 1 and
+processes using &lt;code>PR_SET_CHILD_SUBREAPER&lt;/code> use this as they may
+collect unexpected children that have been reparented from dying
+sub-processes, and that need to be reaped in order to clean up the
+PID space. Currently, these programs cannot easily mix waiting for
+specific sub-processes via &lt;code>pidfd&lt;/code> with waiting for the other
+&lt;em>unexpected&lt;/em> children via &lt;code>waitid(P_ALL, …)&lt;/code> since the latter also
+reaps (and thus invalidates) the pidfd-tracked
+children. Specifically, the &lt;code>systemd&lt;/code> service manager would like
+to use &lt;code>pidfd&lt;/code>s to remove PID recycling security issues, but
+currently cannot as it also needs to generically wait for such
+unexpected children.&lt;/p></description></item><item><title>Asynchronous `close()`</title><link>https://uapi-group.org/kernel-features/wishlist/asynchronous-close/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/asynchronous-close/</guid><description>&lt;p>An asynchronous or forced &lt;code>close()&lt;/code>, that guarantees that
+userspace doesn&amp;rsquo;t have to risk blocking for longer periods of time
+when trying to get rid of unwanted file descriptors, possibly
+received via &lt;code>recvmsg()&lt;/code> + &lt;code>SCM_RIGHTS&lt;/code> (see above). Currently,
+&lt;code>close()&lt;/code> of various file descriptors (for example those referring
+to slow storage, e.g. non-responding NFS servers and such) might
+take arbitrary amounts of time, potentially into the minute range
+and more. This makes it risky accepting file descriptors on
+publicly accessible &lt;code>AF_UNIX&lt;/code> sockets, the way like IPC brokers
+(e.g. D-Bus) do it: if a rogue client keeps sending file
+descriptors that because unexpected must be closed immediately it
+might cause the receiving process to effectively crawl, when it is
+busy closing them all. A special form of &lt;code>close()&lt;/code> that simply
+detaches a file descriptor from the file descriptor table without
+blocking on IO in any form would be great to close this issue.&lt;/p></description></item><item><title>`CLOCK_MONOTONIC` network timestamps</title><link>https://uapi-group.org/kernel-features/wishlist/clock-monotonic-network-timestamps/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/clock-monotonic-network-timestamps/</guid><description>&lt;p>Currently network timestamps are exclusively in &lt;code>CLOCK_REALTIME&lt;/code>, even
+though for many (most?) a monotonic clock would be much preferable, as
+calculations become easier when one doesn&amp;rsquo;t have to think about clock
+jumps and similar.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> &lt;code>systemd-journald&lt;/code> collects implicit timestamps via
+&lt;code>AF_UNIX&lt;/code> time-stamping, in &lt;code>CLOCK_REALTIME&lt;/code>, even though for its
+internal logic only monotonic timestamps are used, as log records
+are searched via bisection in ordered tables, that require
+strictly increasing timestamps. In particular during boot (where
+&lt;code>CLOCK_REALTIME&lt;/code> is often not available, stable or subject to
+corrections) it would be good to have reliable, monotonic
+timestamps on all log records.&lt;/p></description></item><item><title>Immutable loopback block devices</title><link>https://uapi-group.org/kernel-features/wishlist/immutable-loopback-block-devices/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/immutable-loopback-block-devices/</guid><description>&lt;p>Truly immutable loopback block devices. Right now setting up a
+loopback block device in read-only mode, backed by a read-only
+file (stored on a regular read/write file system), and then
+mounting it with &lt;code>ext4&lt;/code> also in &lt;code>MS_RDONLY&lt;/code>mode &lt;em>will&lt;/em> result in
+changes to the file, quite unexpectedly 🤯. Ideally, if a loopback
+block device is set up in read-only mode this should guarantee
+that the backing file remains unmodified by it.&lt;/p></description></item><item><title>A timeout for the `flock()` syscall</title><link>https://uapi-group.org/kernel-features/wishlist/a-timeout-for-the-flock-syscall/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/a-timeout-for-the-flock-syscall/</guid><description>&lt;p>A timeout for the &lt;code>flock()&lt;/code> syscall. Faking the time-out in userspace
+is nasty: most code does it with &lt;code>alarm()&lt;/code> (or equivalent APIs), but
+that&amp;rsquo;s racy since on a heavily loaded system the timeout might trigger
+before the &lt;code>flock()&lt;/code> call is entered, in particular if short time-outs
+shall be used. More accurate is to do the locking in a short-lived
+child processed, but that&amp;rsquo;s difficult already in C, and almost
+impossible in languages that do not allow &lt;code>fork()&lt;/code> without &lt;code>execve()&lt;/code>.&lt;/p></description></item><item><title>Extend `mount_setattr()` to allow changing mount properties ignoring any failures</title><link>https://uapi-group.org/kernel-features/wishlist/extend-mount-setattr-to-allow-changing-mount-properties-ignoring-any-failures/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/extend-mount-setattr-to-allow-changing-mount-properties-ignoring-any-failures/</guid><description>&lt;p>&lt;strong>Use-Case:&lt;/strong> workloads that know that there are mounts in a mount tree
+whose attributes cannot be changed by the caller don&amp;rsquo;t want
+&lt;code>mount_settattr()&lt;/code> to fail on the first mount it failed to convert. Give
+them a flag to request changes ignoring failures.&lt;/p></description></item><item><title>Upgrade masks in `openat2()`</title><link>https://uapi-group.org/kernel-features/wishlist/upgrade-masks-in-openat2/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/upgrade-masks-in-openat2/</guid><description>&lt;p>Add upgrade masks to &lt;code>openat2()&lt;/code>. Extend &lt;code>struct open_how&lt;/code> to allow
+restrict re-opening of file descriptors.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> block services or containers from re-opening/upgrading an
+&lt;code>O_PATH&lt;/code> file descriptor through e.g. &lt;code>/proc/&amp;lt;pid&amp;gt;/fd/&amp;lt;nr&lt;/code> as &lt;code>O_WRONLY&lt;/code>.&lt;/p></description></item><item><title>Make quotas work with user namespaces</title><link>https://uapi-group.org/kernel-features/wishlist/make-quotas-work-with-user-namespaces/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/make-quotas-work-with-user-namespaces/</guid><description>&lt;p>The quota codepaths in the kernel currently broken and inconsistent
+and most interesting operations are guarded behind
+&lt;code>capable(CAP_SYS_ADMIN)&lt;/code>, i.e., require &lt;code>CAP_SYS_ADMIN&lt;/code> in the initial
+user namespace. We should rework these codepaths to work with user
+namespaces and then see whether we can make them work with idmapped
+mounts.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> using quotas correctly in containers.&lt;/p></description></item><item><title>Add `MOUNT_SETATTR_LOCKED` flag to `mount_setattr()`</title><link>https://uapi-group.org/kernel-features/wishlist/add-mount-setattr-locked-flag-to-mount-setattr/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/add-mount-setattr-locked-flag-to-mount-setattr/</guid><description>&lt;p>Add a new &lt;code>MOUNT_SETATTR_LOCKED&lt;/code> flag to &lt;code>mount_setattr(..., ..., MOUNT_SETATTR_LOCKED, ..., ...)&lt;/code>.
+The &lt;code>MOUNT_SETATTR_LOCKED&lt;/code> flag allow a &lt;code>ns_capable(mntns-&amp;gt;user_ns, CAP_SYS_ADMIN)&lt;/code> caller to lock all mount properties. The mount properties
+cannot be changed anymore.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> allowing processes to lock mount properties even for
+privileged processes. Locking mount properties would currently involve
+having to have the mount namespace of the container be owned by an ancestor
+user namespace. But this doesn&amp;rsquo;t just lock a single mount or mount subtree
+it locks all mounts in the mount namespace, i.e., the mount table cannot be
+altered.&lt;/p></description></item><item><title>Extend `setns()` to allow attaching to all new namespaces of a process</title><link>https://uapi-group.org/kernel-features/wishlist/extend-setns-to-allow-attaching-to-all-new-namespaces-of-a-process/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/extend-setns-to-allow-attaching-to-all-new-namespaces-of-a-process/</guid><description>&lt;p>Add an extension to &lt;code>setns()&lt;/code> to allow attaching to all namespaces of
+a process &lt;code>SETNS_PIDFD_ALL&lt;/code> different from the caller&amp;rsquo;s namespaces.
+Currently specifying e.g., &lt;code>CLONE_NEWUSER&lt;/code> fails if the caller is in the
+same user namespace as the target process. This is very inconvenient.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Make it trivial to attach to all namespaces of a process
+without having to figure out whether the caller is already in the same
+namespace or not.&lt;/p></description></item><item><title>Security hook for `mount_setattr()`</title><link>https://uapi-group.org/kernel-features/wishlist/security-hook-for-mount-setattr/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/security-hook-for-mount-setattr/</guid><description>&lt;p>(kAPI) Add security hook to &lt;code>mount_setattr()&lt;/code>.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Allow LSMs to make decisions about what mount properties to
+allow and what to deny.&lt;/p></description></item><item><title>Per-cgroup limit for coredump sizes</title><link>https://uapi-group.org/kernel-features/wishlist/per-cgroup-limit-for-coredump-sizes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/per-cgroup-limit-for-coredump-sizes/</guid><description>&lt;p>A per-cgroup knob for coredump sizes. Currently coredump size
+control is strictly per process, and primarily under control of
+the processes themselves. It would be good if we had a per-cgroup
+knob instead, that is under control of the service manager.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> coredumps can be heavy to generate. For different
+usecases it would be good to be able to opt-in or opt-out
+dynamically from coredumps for specific services, at runtime
+without restarting them.&lt;/p></description></item><item><title>Race-free creation and opening of non-file inodes</title><link>https://uapi-group.org/kernel-features/wishlist/race-free-creation-and-opening-of-non-file-inodes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/race-free-creation-and-opening-of-non-file-inodes/</guid><description>&lt;p>A way to race-freely create an (non-file) inode and immediately
+open it. For regular files we have open(O_CREAT) for creating a
+new file inode, and returning a pinning fd to it. This is missing
+for other inode types, such as directories, device nodes,
+FIFOs. The lack of such functionality means that when populating a
+directory tree there&amp;rsquo;s always a race involved: the inodes first
+need to be created, and then opened to adjust their
+permissions/ownership/labels/timestamps/acls/xattrs/…, but in the
+time window between the creation and the opening they might be
+replaced by something else. Addressing this race without proper
+APIs is possible (by immediately fstat()ing what was opened, to
+verify that it has the right inode type), but difficult to get
+right. Hence, mkdirat_fd() that creates a directory &lt;em>and&lt;/em> returns
+an O_DIRECTORY fd to it would be great. As would be mknodeat_fd()
+that creates a device node, FIFO or (dead) socket and returns an
+O_PATH fd to it. And of course symlinkat_fd() that creates a
+symlink and returns an O_PATH fd to it.&lt;/p></description></item><item><title>Extend `io_uring` with classic synchronous system calls</title><link>https://uapi-group.org/kernel-features/wishlist/extend-io-uring-with-classic-synchronous-system-calls/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/extend-io-uring-with-classic-synchronous-system-calls/</guid><description>&lt;p>The &lt;code>io_uring&lt;/code> subsystem is open to adding classic existing synchronous
+system calls (e.g. &lt;code>setns()&lt;/code> or &lt;code>mount()&lt;/code> or other) to &lt;code>io_uring&lt;/code>.
+They also said they would support adding new functionality into
+&lt;code>io_uring&lt;/code> that is not exposed through system calls yet.&lt;/p></description></item><item><title>Map different uids/gids to the same uids/gids?</title><link>https://uapi-group.org/kernel-features/wishlist/map-different-uids-gids-to-the-same-uids-gids/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/map-different-uids-gids-to-the-same-uids-gids/</guid><description>&lt;p>Explore the idea of mapping different uids/gids to the same uids/gids, i.e.
+65534:1000:1 50000:1000:1. This will only work if the mount is read-only as
+the kernel wouldn&amp;rsquo;t know what uid/gid would need to be put to disk
+otherwise (65534? 50000? the first one that is mapped?).&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Delegate multiple {g,u}ids to the same user. Merging
+ownership similar to how overlayfs merges files. Bindfs
+(&lt;a href="https://bindfs.org/docs/bindfs.1.html#sect3">https://bindfs.org/docs/bindfs.1.html#sect3&lt;/a>) allows this concept too.&lt;/p></description></item><item><title>blobfs</title><link>https://uapi-group.org/kernel-features/wishlist/blobfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/blobfs/</guid><description>&lt;p>&lt;a href="https://fuchsia.dev/fuchsia-src/concepts/filesystems/blobfs">&lt;code>blobfs&lt;/code>&lt;/a>
+for Linux. i.e. a minimalistic file system, that can store
+authenticated (Verity) data files, that can be written once, and
+not be modified after that, and provide stable handles (i.e. is
+content-addressable) to them.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This would deliver just about enough to place
+trusted OS resources (binaries, kernels, initrds, fs trees, other
+resources) in them, without having to trust the medium and IO
+underneath. Should be simple enough to even implement in a boot
+loader and similar, without making things vulnerable to rogue file
+system image attacks. The OS and its payloads (apps, containers,
+…) could then be composed from these resources, through means like
+overlayfs, namespacing and more.&lt;/p></description></item><item><title>Namespaced loop and block devices</title><link>https://uapi-group.org/kernel-features/wishlist/namespaced-loop-and-block-devices/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/namespaced-loop-and-block-devices/</guid><description>&lt;p>Namespace-able loop and block devices, usable inside user namespaces.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Allow mounting images inside nspawn containers, and using
+RootImage= and friends in the systemd user manager.&lt;/p></description></item><item><title>Device cgroup guard to allow `mknod()` in non-initial userns</title><link>https://uapi-group.org/kernel-features/wishlist/device-cgroup-guard-to-allow-mknod-in-non-initial-userns/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/device-cgroup-guard-to-allow-mknod-in-non-initial-userns/</guid><description>&lt;p>If a container manager restricts its unprivileged (user namespaced)
+children by a device cgroup, it is not necessary to deny &lt;code>mknod()&lt;/code>
+anymore. Thus, user space applications may map devices on different
+locations in the file system by using &lt;code>mknod()&lt;/code> inside the container.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> A use case for this, which is applied by users of GyroidOS,
+is to run &lt;code>virsh&lt;/code> for VMs inside an unprivileged container. &lt;code>virsh&lt;/code> or
+libvirt creates device nodes, e.g., &lt;code>/var/run/libvirt/qemu/11-fgfg.dev/null&lt;/code>
+which currently fails in a non-initial userns, even if a cgroup device white
+list with the corresponding major, minor of &lt;code>/dev/null&lt;/code> exists. Thus, in
+this case the usual bind mounts or pre populated device nodes under &lt;code>/dev&lt;/code>
+are not sufficient.&lt;/p></description></item><item><title>`AT_EMPTY_PATH` support for `unlinkat()`</title><link>https://uapi-group.org/kernel-features/wishlist/at-empty-path-support-for-unlinkat/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/at-empty-path-support-for-unlinkat/</guid><description>&lt;p>&lt;strong>Use-Case:&lt;/strong> When dealing with files/directories, allow passing
+around only a file descriptor without having to keep the path around
+to be able to unlink the file/directory.&lt;/p></description></item><item><title>Race-free mounting of block devices</title><link>https://uapi-group.org/kernel-features/wishlist/race-free-mounting-of-block-devices/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/race-free-mounting-of-block-devices/</guid><description>&lt;p>Introduce a new struct to &lt;code>fsconfig()&lt;/code> as an alternative to the
+&lt;code>source&lt;/code> property. The struct contains at least a pointer to a path,
+possibly a device minor and major, and a diskseq number. The VFS can
+expose a helper that filesystems can call and use the diskseq number
+to verify that the block device they are intending to mount is indeed
+the one they want to mount.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Race-free mounting of block devices.&lt;/p></description></item><item><title>Ability to reopen a `struct block_device`</title><link>https://uapi-group.org/kernel-features/wishlist/ability-to-reopen-a-struct-block-device/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/ability-to-reopen-a-struct-block-device/</guid><description>&lt;p>Add ability to reopen a &lt;code>struct block_device&lt;/code>. This would allow using
+&lt;code>blkdev_get_by_path()&lt;/code>/&lt;code>blkdev_get_{part,whole}()&lt;/code> to claim a device
+with &lt;code>BLK_OPEN_READ&lt;/code> and later on reopen with
+&lt;code>BLK_OPEN_READ | BLK_OPEN_WRITE&lt;/code>. This in turn would opening block
+devices at &lt;code>fsconfig(FS_CONFIG_SET_*)&lt;/code> time and then at &lt;code>fill_super()&lt;/code>
+time we would be able to reopen in case the &lt;code>!(fc-&amp;gt;sb_flags &amp;amp; SB_RDONLY)&lt;/code>.
+Overall this has the effect that we&amp;rsquo;re able to open devices early
+giving the user early errors when they set mount options rather than
+very late when the superblock is created.&lt;/p></description></item><item><title>Specification of a keyring for dm-verity volume verification</title><link>https://uapi-group.org/kernel-features/wishlist/specification-of-a-keyring-for-dm-verity-volume-verification/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/specification-of-a-keyring-for-dm-verity-volume-verification/</guid><description>&lt;p>When activating a dm-verity volume allow specifying keyring to
+validate root hash signature against.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> In systemd, we&amp;rsquo;d like to authenticate Portable Service
+images, system extension images, configuration images, container
+images with different keys, as they typically originate from
+different sources and it should not be possible to generate a
+system extension with a key pair that is supposed to be good for
+container images only.&lt;/p></description></item><item><title>Path-based ACL management in an LSM hook</title><link>https://uapi-group.org/kernel-features/wishlist/path-based-acl-management-in-an-lsm-hook/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/path-based-acl-management-in-an-lsm-hook/</guid><description>&lt;p>The LSM module API should have the ability to do path-based (not
+just inode-based) ACL management.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This would be useful in BPF-LSM modules such as
+systemd&amp;rsquo;s &lt;code>mntfsd&lt;/code> which allows unprivileged file system mounts in
+some cases, and which would like to restrict ACL handling based on
+the superblock involved.&lt;/p></description></item><item><title>Immutable layers for `overlayfs`</title><link>https://uapi-group.org/kernel-features/wishlist/immutable-layers-for-overlayfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/immutable-layers-for-overlayfs/</guid><description>&lt;p>&lt;code>overlayfs&lt;/code> should permit &lt;em>immutable&lt;/em> layers, i.e. layers whose
+non-directory inodes may not be overriden in an upper writable
+layer.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This would be useful when implementing &lt;code>/etc/&lt;/code> as a
+stack of overlayfs layers, each shipping configuration for a
+different facet of the system, with a writable layer on the top for
+local modifications. In such a scenario it would be useful to allow
+the user to change any configuration it likes, except of the files
+and other inodes shipped in the lower layers.&lt;/p></description></item><item><title>`ioctl()` API for `overlayfs`</title><link>https://uapi-group.org/kernel-features/wishlist/ioctl-api-for-overlayfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/ioctl-api-for-overlayfs/</guid><description>&lt;p>&lt;code>overlayfs&lt;/code> should have an &lt;code>ioctl()&lt;/code>-based API (or similar) for
+querying information of the backing file systems/block devices&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> In systemd in various areas we automatically find the
+block device backing the root file system and other file systems
+(Example: &lt;code>systemd-gpt-auto-generator&lt;/code> or &lt;code>bootctl&lt;/code> wull try to find
+auxiliary file systems of the OS image by looking in the GPT
+partition table the root file system is located in). While this
+logic is good enough to find the backing block devices of some more
+complex storage such as dm-crypt, dm-verity or btrfs, once
+&lt;code>overlayfs&lt;/code> is used as backing for the root file system this logic
+does not work anymore. It would be great if there was an API to
+simply query &lt;code>overlayfs&lt;/code> for the superblock information
+(i.e. &lt;code>.st_dev&lt;/code>) of the backing layers.&lt;/p></description></item><item><title>Automatic growing of `btrfs` filesystems</title><link>https://uapi-group.org/kernel-features/wishlist/automatic-growing-of-btrfs-filesystems/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/automatic-growing-of-btrfs-filesystems/</guid><description>&lt;p>An &lt;em>auto-grow&lt;/em> feature in &lt;code>btrfs&lt;/code> would be excellent.&lt;/p>
+&lt;p>If such a mode is enabled, &lt;code>btrfs&lt;/code> would automatically grow a file
+system up to the size of its backing block devices. Example: btrfs
+is created with 200M in size on a block device 2G in size. Once the
+file system is filled up fully, &lt;code>btrfs&lt;/code> would automatically grow the
+file system as need in the increments it needs, up to the 2G that
+the backing block device is in size.&lt;/p></description></item><item><title>Add process by PIDFD to a cgroup</title><link>https://uapi-group.org/kernel-features/wishlist/add-process-by-pidfd-to-a-cgroup/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/add-process-by-pidfd-to-a-cgroup/</guid><description>&lt;p>At the moment the canonical way to add a process to a cgroup is by
+echoing its PID into the &lt;code>cgroup.procs&lt;/code> attribute in the target
+cgroupfs directory of the cgroup. This is safe as long as the
+process doing so just forked off the process it wants to migrate and
+hence can control that it hasn&amp;rsquo;t been reaped yet, and hence
+guarantees the PID is valid. This is racy however if &amp;ldquo;foreign&amp;rdquo;
+processes shall be moved into the cgroup.&lt;/p></description></item><item><title>Open thread-group leader via `pidfd_open()`</title><link>https://uapi-group.org/kernel-features/wishlist/open-thread-group-leader-via-pidfd-open/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/open-thread-group-leader-via-pidfd-open/</guid><description>&lt;p>Extend &lt;code>pidfd_open()&lt;/code> to allow opening the thread-group leader based on the
+PID of an individual thread. Currently we do support:&lt;/p>
+&lt;ol>
+&lt;li>&lt;code>pidfd_open(1234, 0)&lt;/code> on a thread-group leader PID&lt;/li>
+&lt;li>&lt;code>pidfd_open(1234, PIDFD_THREAD)&lt;/code> on a thread&lt;/li>
+&lt;/ol>
+&lt;p>Add an option to go from individual thread to thread-group leader.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Allow for a race free way to go from individual thread
+to thread-group leader pidfd.&lt;/p></description></item><item><title>Useful handling of LSM denials on SCM_RIGHTS</title><link>https://uapi-group.org/kernel-features/wishlist/useful-handling-of-lsm-denials-on-scm-rights/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/useful-handling-of-lsm-denials-on-scm-rights/</guid><description>&lt;p>Right now if some LSM such as SELinux denies an &lt;code>AF_UNIX&lt;/code> socket peer
+to receive an &lt;code>SCM_RIGHTS&lt;/code> fd the &lt;code>SCM_RIGHTS&lt;/code> fd array will be cut
+short at that point, and &lt;code>MSG_CTRUNC&lt;/code> is set on return of
+&lt;code>recvmsg()&lt;/code>. This is highly problematic behaviour, because it leaves
+the receiver wondering what happened. As per man page &lt;code>MSG_CTRUNC&lt;/code> is
+supposed to indicate that the control buffer was sized too short, but
+suddenly a permission error might result in the exact same flag being
+set. Moreover, the receiver has no chance to determine how many fds
+got originally sent and how many were suppressed.&lt;/p></description></item><item><title>Reasonable EOF on SOCK_SEQPACKET</title><link>https://uapi-group.org/kernel-features/wishlist/reasonable-eof-on-sock-seqpacket/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/reasonable-eof-on-sock-seqpacket/</guid><description>&lt;p>Zero size datagrams cannot be distinguished from EOF on
+&lt;code>SOCK_SEQPACKET&lt;/code>. Both will cause &lt;code>recvmsg()&lt;/code> to return zero.&lt;/p>
+&lt;p>Idea how to improve things: maybe define a new MSG_XYZ flag for this,
+which causes either of the two cases result in some recognizable error
+code returned rather than a 0.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Any code that wants to use &lt;code>SOCK_SEQPACKET&lt;/code> and cannot
+effort disallowing zero sized datagrams from their protocol.&lt;/p></description></item><item><title>Reasonable Handling of SELinux dropping SCM_RIGHTS fds</title><link>https://uapi-group.org/kernel-features/wishlist/reasonable-handling-of-selinux-dropping-scm-rights-fds/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/reasonable-handling-of-selinux-dropping-scm-rights-fds/</guid><description>&lt;p>Currently, if SELinux refuses to let some file descriptor through, it
+will just drop them from the &lt;code>SCM_RIGHTS&lt;/code> array. That&amp;rsquo;s a terrible
+idea, since applications rely on the precise arrangement of the array
+to know which fd is which. By dropping entries silently, these apps
+will all break.&lt;/p>
+&lt;p>Idea how to improve things: leave the elements in the array in place,
+but return a marker instead (i.e. negative integer, maybe &lt;code>-EPERM&lt;/code>) that
+tells userspace that there was an fd, but it was not allowed through.&lt;/p></description></item><item><title>`AT_EMPTY_PATH` support for `openat()` and `openat2()`</title><link>https://uapi-group.org/kernel-features/wishlist/at-empty-path-support-for-openat-and-openat2/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/at-empty-path-support-for-openat-and-openat2/</guid><description>&lt;p>To get an operable version of an &lt;code>O_PATH&lt;/code> file descriptors, it is
+possible to use &lt;code>openat(fd, &amp;quot;.&amp;quot;, O_DIRECTORY)&lt;/code> for directories, but
+other files currently require going through
+&lt;code>open(&amp;quot;/proc/&amp;lt;pid&amp;gt;/fd/&amp;lt;nr&amp;gt;&amp;quot;)&lt;/code> which depends on a functioning &lt;code>procfs&lt;/code>.&lt;/p>
+&lt;p>FreeBSD already has &lt;code>O_EMPTY_PATH&lt;/code> for &lt;code>openat&lt;/code>, while &lt;code>fstatat&lt;/code> and
+similar functions have &lt;code>AT_EMPTY_PATH&lt;/code>.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> When dealing with &lt;code>O_PATH&lt;/code> file descriptors, allow
+re-opening an operable version without the need of &lt;code>procfs&lt;/code>.&lt;/p></description></item></channel></rss>

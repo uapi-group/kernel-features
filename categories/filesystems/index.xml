@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Filesystems on UAPI Group Kernel Feature Wishlist</title><link>https://uapi-group.org/kernel-features/categories/filesystems/</link><description>Recent content in Filesystems on UAPI Group Kernel Feature Wishlist</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://uapi-group.org/kernel-features/categories/filesystems/index.xml" rel="self" type="application/rss+xml"/><item><title>Create empty mount namespaces via `unshare(UNSHARE_EMPTY_MNTNS)` and `clone3(CLONE_EMPTY_MNTNS)`</title><link>https://uapi-group.org/kernel-features/in-progress/create-empty-mount-namespaces-via-unshare-unshare-empty-mntns-and-clone3-clone-empty-mntns/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/create-empty-mount-namespaces-via-unshare-unshare-empty-mntns-and-clone3-clone-empty-mntns/</guid><description>&lt;p>Now that we have support for &lt;code>nullfs&lt;/code> it is trivial to allow the
+creation of completely empty mount namespaces, i.e., mount namespaces
+that only have the &lt;code>nullfs&lt;/code> mount located at it&amp;rsquo;s root.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This allows to isolate tasks in completely empty mount
+namespaces. It also allows the caller to avoid copying its current mount
+table which is useless in the majority of container workload cases.&lt;/p></description></item><item><title>xattrs for pidfd</title><link>https://uapi-group.org/kernel-features/wishlist/xattrs-for-pidfd/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/xattrs-for-pidfd/</guid><description>&lt;p>Since pidfds have been moved to a separate pidfs filesystem it is easy
+to add support for xattrs on pidfds. That could be valuable to store
+meta information along the pidfd. Storing an xattr should probably make
+the pidfd automatically persistent, i.e., the reference for the dentry
+is only put once the task is reaped.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Store meta information alongside pidfds.&lt;/p></description></item><item><title>Ability to put user xattrs on `S_IFSOCK` socket entrypoint inodes in the file system</title><link>https://uapi-group.org/kernel-features/in-progress/ability-to-put-user-xattrs-on-s-ifsock-socket-entrypoint-inodes-in-the-file-system/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/ability-to-put-user-xattrs-on-s-ifsock-socket-entrypoint-inodes-in-the-file-system/</guid><description>&lt;p>Currently, the kernel only allows extended attributes in the
+&lt;code>user.*&lt;/code> namespace to be attached to directory and regular file
+inodes. It would be tremendously useful to allow them to be
+associated with socket inodes, too.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> There are two syslog RFCs in use today: RFC3164 and
+RFC5424. &lt;code>glibc&lt;/code>&amp;rsquo;s &lt;code>syslog()&lt;/code> API generates events close to the
+former, but there are programs which would like to generate the
+latter instead (as it supports structured logging). The two formats
+are not backwards compatible: a client sending RFC5424 messages to a
+server only understanding RFC3164 will cause an ugly mess. On Linux
+there&amp;rsquo;s only a single &lt;code>/dev/log&lt;/code> AF_UNIX/SOCK_DGRAM socket backing
+&lt;code>syslog()&lt;/code>, which is used in a one-way, fire-and-forget style. This
+means that feature negotation is not really possible within the
+protocol. Various tools bind mount the socket inode into &lt;code>chroot()&lt;/code>
+and container environments, hence it would be fantastic to associate
+supported feature information directly with the inode (and thus
+outside of the protocol) to make it easy for clients to determine
+which features are spoken on a socket, in a way that survives bind
+mounts. Implementation idea would be that syslog daemons
+implementing RFC5425 could simply set an xattr &lt;code>user.rfc5424&lt;/code> to &lt;code>1&lt;/code>
+(or something like that) on the socket inode, and clearly inform
+clients in a natural and simple way that they&amp;rsquo;d be happy to parse
+the newer format. Also see:
+&lt;a href="https://github.com/systemd/systemd/issues/19251">https://github.com/systemd/systemd/issues/19251&lt;/a> – This idea could
+also be extended to other sockets and other protocols: by setting
+some extended attribute on a socket inodes, services could advertise
+which protocols they support on them. For example D-Bus sockets
+could carry &lt;code>user.dbus&lt;/code> set to &lt;code>1&lt;/code>, and Varlink sockets
+&lt;code>user.varlink&lt;/code> set to &lt;code>1&lt;/code> and so on.&lt;/p></description></item><item><title>inotify() events for BSD file locks</title><link>https://uapi-group.org/kernel-features/wishlist/inotify-events-for-bsd-file-locks/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/inotify-events-for-bsd-file-locks/</guid><description>&lt;p>BSD file locks (i.e. &lt;code>flock()&lt;/code>, as opposed to POSIX &lt;code>F_SETLK&lt;/code> and
+friends are inode-focussed, hence would be great if one could get
+asynchronous notification when they are released via inotify.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> udevd probes block devices whenever they pop up to
+create /dev/disk/by-label/* and similar symlinks. Formatting tools
+can temporarily block this behaviour by taking a BSD file lock on
+the block device (as per &lt;a href="https://systemd.io/BLOCK_DEVICE_LOCKING%29">https://systemd.io/BLOCK_DEVICE_LOCKING)&lt;/a>,
+in order to make sure udevd doesn&amp;rsquo;t probe file systems/partition
+tables that are only partially initialized. Currently, udevd uses
+inotify &lt;code>IN_CLOSE_WRITE&lt;/code> notifications to detect whenever
+applications close a block device after writing to it, and
+automatically reprobes the device. This works reasonably OK given
+that block devices are usually closed at the same time as their
+BSD file lock is released, and vice versa. However, this is not
+fully correct: what udevd actually should be watching is the locks
+being released, not the devices being closed.&lt;/p></description></item><item><title>Support detached mounts with `pivot_root()`</title><link>https://uapi-group.org/kernel-features/in-progress/support-detached-mounts-with-pivot-root/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/support-detached-mounts-with-pivot-root/</guid><description>&lt;p>The new rootfs must currently refer to an attached mount. This restriction
+seems unnecessary. We should allow the new rootfs to refer to a detached
+mount.&lt;/p>
+&lt;p>This will allow a service- or container manager to create a new rootfs as
+a detached, private mount that isn&amp;rsquo;t exposed anywhere in the filesystem and
+then &lt;code>pivot_root()&lt;/code> into it.&lt;/p>
+&lt;p>Since &lt;code>pivot_root()&lt;/code> only takes path arguments the new rootfs would need to
+be passed via &lt;code>/proc/&amp;lt;pid&amp;gt;/fd/&amp;lt;nr&amp;gt;&lt;/code>. In the long run we should add a new
+&lt;code>pivot_root()&lt;/code> syscall operating on file descriptors instead of paths.&lt;/p></description></item><item><title>Add immutable rootfs (`nullfs`)</title><link>https://uapi-group.org/kernel-features/in-progress/add-immutable-rootfs-nullfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/add-immutable-rootfs-nullfs/</guid><description>&lt;p>Currently &lt;code>pivot_root()&lt;/code> doesn&amp;rsquo;t work on the real rootfs because it
+cannot be unmounted. Userspace has to do a recursive removal of the
+initramfs contents manually before continuing the boot.&lt;/p>
+&lt;p>Add an immutable rootfs called &lt;code>nullfs&lt;/code> that serves as the parent mount
+for anything that is actually useful such as the tmpfs or ramfs for
+initramfs unpacking or the rootfs itself. The kernel mounts a
+tmpfs/ramfs on top of it, unpacks the initramfs and fires up userspace
+which mounts the rootfs and can then simply do:&lt;/p></description></item><item><title>Allow creating idmapped mounts from idmapped mounts</title><link>https://uapi-group.org/kernel-features/completed/allow-creating-idmapped-mounts-from-idmapped-mounts/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/allow-creating-idmapped-mounts-from-idmapped-mounts/</guid><description>&lt;p>[x] Allow creating idmapped mounts from idmapped mounts&lt;/p>
+&lt;p>Add a new &lt;code>OPEN_TREE_CLEAR&lt;/code> flag to &lt;code>open_tree()&lt;/code> that can only be
+used in conjunction with &lt;code>OPEN_TREE_CLONE&lt;/code>. When specified it will clear
+all mount properties from that mount including the mount&amp;rsquo;s idmapping.
+Requires the caller to be &lt;code>ns_capable(mntns-&amp;gt;user_ns)&lt;/code>. If idmapped mounts
+are encountered the caller must be &lt;code>ns_capable(sb-&amp;gt;user_ns, CAP_SYS_ADMIN)&lt;/code>
+in the filesystems user namespace.&lt;/p>
+&lt;p>Locked mount properties cannot be changed. A mount&amp;rsquo;s idmapping becomes
+locked if it propagates across user namespaces.&lt;/p></description></item><item><title>Linking of `O_TMPFILE` files with replacement</title><link>https://uapi-group.org/kernel-features/wishlist/linking-of-o-tmpfile-files-with-replacement/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/linking-of-o-tmpfile-files-with-replacement/</guid><description>&lt;p>Ability to link an &lt;code>O_TMPFILE&lt;/code> file into a directory while &lt;em>replacing&lt;/em> an
+existing file. (Currently there&amp;rsquo;s only the ability to link it in, if the
+file name doesn&amp;rsquo;t exist yet.)&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> there are many programs (e.g. &lt;code>systemd-hostnamed&lt;/code>
+when updating &lt;code>/etc/hostname&lt;/code>) that atomically want to update a
+file, so that either the old or the new version is in place, but
+never a partially updated one. The canonical way to do this is by
+creating a temporary file with the new contents, and then renaming
+it to the filename of the file to update, thus atomically replacing
+it. Currently, the temporary file for this must be created with a
+random name, &lt;code>O_TMPFILE&lt;/code> cannot be used, since for these files
+atomic-replace is not supported, currently.&lt;/p></description></item><item><title>Allow `MOVE_MOUNT_BENEATH` on the rootfs</title><link>https://uapi-group.org/kernel-features/in-progress/allow-move-mount-beneath-on-the-rootfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/allow-move-mount-beneath-on-the-rootfs/</guid><description>&lt;p>Allow &lt;code>MOVE_MOUNT_BENEATH&lt;/code> to target the caller&amp;rsquo;s rootfs, enabling
+root-switching without &lt;code>pivot_root(2)&lt;/code>. The traditional approach to
+switching the rootfs involves &lt;code>pivot_root(2)&lt;/code> or a &lt;code>chroot_fs_refs()&lt;/code>-based
+mechanism that atomically updates &lt;code>fs-&amp;gt;root&lt;/code> for all tasks sharing the
+same &lt;code>fs_struct&lt;/code>. This has consequences for &lt;code>fork()&lt;/code>, &lt;code>unshare(CLONE_FS)&lt;/code>,
+and &lt;code>setns()&lt;/code>.&lt;/p>
+&lt;p>Instead, decompose root-switching into individually atomic, locally-scoped
+steps:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>fd_tree &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">open_tree&lt;/span>(&lt;span style="color:#f92672">-&lt;/span>EBADF, &lt;span style="color:#e6db74">&amp;#34;/newroot&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> OPEN_TREE_CLONE &lt;span style="color:#f92672">|&lt;/span> OPEN_TREE_CLOEXEC);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">fchdir&lt;/span>(fd_tree);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">move_mount&lt;/span>(fd_tree, &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>, AT_FDCWD, &lt;span style="color:#e6db74">&amp;#34;/&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> MOVE_MOUNT_BENEATH &lt;span style="color:#f92672">|&lt;/span> MOVE_MOUNT_F_EMPTY_PATH);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">chroot&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;.&amp;#34;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">umount2&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;.&amp;#34;&lt;/span>, MNT_DETACH);&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Since each step only modifies the caller&amp;rsquo;s own state, the
+&lt;code>fork()&lt;/code>/&lt;code>unshare()&lt;/code>/&lt;code>setns()&lt;/code> races are eliminated by design.&lt;/p></description></item><item><title>Unlinking via two file descriptors</title><link>https://uapi-group.org/kernel-features/wishlist/unlinking-via-two-file-descriptors/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/unlinking-via-two-file-descriptors/</guid><description>&lt;p>&lt;code>unlinkat3(dir_fd, name, inode_fd)&lt;/code>: taking one file descriptor
+for the directory to remove a file in, and another one referring
+to the inode of the filename to remove. This call should only
+succeed if the specified filename still refers to the specified
+inode.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> code that operates on a well-know path that might be
+shared by multiple programs that jointly manage it might want to
+safely remove a filename under the guarantee it still refers to
+the expected inode. As a specific example, consider lock files,
+that should be cleaned up only if they still refer to the assumed
+owner&amp;rsquo;s instance, but leave the file in place if another process
+already took over the filename.&lt;/p></description></item><item><title>Mount a subdirectory instead of the top-level directory</title><link>https://uapi-group.org/kernel-features/completed/mount-a-subdirectory-instead-of-the-top-level-directory/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/mount-a-subdirectory-instead-of-the-top-level-directory/</guid><description>&lt;p>[x] Mount a subdirectory instead of the top-level directory&lt;/p>
+&lt;p>Ability to mount a subdirectory of a regular file system instead of
+the top-level directory. E.e. for a file system &lt;code>/dev/sda1&lt;/code> which
+contains a sub-directory &lt;code>/foobar&lt;/code> mount &lt;code>/foobar&lt;/code> without having
+to mount its parent directory first. Consider something like this:&lt;/p>
+&lt;pre tabindex="0">&lt;code>mount -t ext4 /dev/sda1 somedir/ -o subdir=/foobar&lt;/code>&lt;/pre>&lt;p>(This is of course already possible via some mount namespacing
+shenanigans, but this requires namespacing to be available, and is
+not precisely obvious to implement. Explicit kernel support at mount
+time would be much preferable.)&lt;/p></description></item><item><title>Unmounting of obstructed mounts</title><link>https://uapi-group.org/kernel-features/completed/unmounting-of-obstructed-mounts/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/unmounting-of-obstructed-mounts/</guid><description>&lt;p>[x] ability to unmount obstructed mounts. (this means: you have a stack
+of mounts on the very same inode, and you want to remove a mount in
+the middle. right now, you can only remove the topmost mount.)&lt;/p>
+&lt;p>&lt;strong>🙇 instead of the ability to unmount obstructured mounts we gained
+the ability to mount beneath an existing mount, with mostly
+equivalent outcome. &lt;code>6ac392815628f317fcfdca1a39df00b9cc4ebc8b (&amp;quot;fs: allow to mount beneath top mount&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p></description></item><item><title>Filtering on received file descriptors</title><link>https://uapi-group.org/kernel-features/wishlist/filtering-on-received-file-descriptors/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/filtering-on-received-file-descriptors/</guid><description>&lt;p>An alternative to the previous item could be if some form of filtering
+could be enforced on the file descriptors suitable for enqueuing on
+the &lt;code>AF_UNIX&lt;/code> socket. i.e. allow filtering by superblock type or
+similar, so that policies such as &amp;ldquo;only &lt;code>memfd&lt;/code>s are OK to be
+received&amp;rdquo; may be expressed. (BPF?).&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> as above.&lt;/p></description></item><item><title>Idmapped mounts for tmpfs</title><link>https://uapi-group.org/kernel-features/completed/idmapped-mounts-for-tmpfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/idmapped-mounts-for-tmpfs/</guid><description>&lt;p>[x] Support idmapped mounts for tmpfs&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>7a80e5b8c6fa (&amp;quot;shmem: support idmapped mounts for tmpfs&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Runtimes such as Kubernetes use a lot of &lt;code>tmpfs&lt;/code> mounts of
+individual files or directories to expose information to containers/pods.
+Instead of having to change ownership permanently allow them to use an
+idmapped mount instead.&lt;/p>
+&lt;p>@rata and @giuseppe brought this suggestion forward. For Kubernetes it is
+sufficient to support idmapped mounts of &lt;code>tmpfs&lt;/code> instances mounted in the
+initial user namespace. However, in the future idmapped
+mounts of &lt;code>tmpfs&lt;/code> instances mounted in user namespaces should be supported.
+Other container runtimes want to make use of this. The kernel is able to
+support this since at least &lt;code>5.17&lt;/code>.&lt;/p></description></item><item><title>Immutable loopback block devices</title><link>https://uapi-group.org/kernel-features/wishlist/immutable-loopback-block-devices/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/immutable-loopback-block-devices/</guid><description>&lt;p>Truly immutable loopback block devices. Right now setting up a
+loopback block device in read-only mode, backed by a read-only
+file (stored on a regular read/write file system), and then
+mounting it with &lt;code>ext4&lt;/code> also in &lt;code>MS_RDONLY&lt;/code>mode &lt;em>will&lt;/em> result in
+changes to the file, quite unexpectedly 🤯. Ideally, if a loopback
+block device is set up in read-only mode this should guarantee
+that the backing file remains unmodified by it.&lt;/p></description></item><item><title>Namespace `binfmt_misc` filesystem</title><link>https://uapi-group.org/kernel-features/completed/namespace-binfmt-misc-filesystem/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/namespace-binfmt-misc-filesystem/</guid><description>&lt;p>[x] Make the &lt;code>binfmt_misc&lt;/code> filesystem namespaced.&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>21ca59b365c0 (&amp;quot;binfmt_misc: enable sandboxed mounts&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Allow containers and sandboxes to register their own binfmt
+handlers.&lt;/p></description></item><item><title>Support idmapped mounts for `overlayfs`</title><link>https://uapi-group.org/kernel-features/completed/support-idmapped-mounts-for-overlayfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/support-idmapped-mounts-for-overlayfs/</guid><description>&lt;p>[x] Support idmapped mounts for &lt;code>overlayfs&lt;/code>&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>bc70682a497c (&amp;quot;ovl: support idmapped layers&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Allow containers to use &lt;code>overlayfs&lt;/code> with idmapped mounts.&lt;/p></description></item><item><title>A reliable way to check for PID namespacing</title><link>https://uapi-group.org/kernel-features/completed/a-reliable-way-to-check-for-pid-namespacing/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/a-reliable-way-to-check-for-pid-namespacing/</guid><description>&lt;p>[x] A reliable (non-heuristic) way to detect from userspace if the
+current process is running in a PID namespace that is not the main
+PID namespace. PID namespaces are probably the primary type of
+namespace that identify a container environment. While many
+heuristics exist to determine generically whether one is executed
+inside a container, it would be good to have a correct,
+well-defined way to determine this.&lt;/p>
+&lt;p>&lt;strong>🙇 The inode number of the root PID namespace is fixed (0xEFFFFFFC)
+and now considered API. It can be used to distinguish the root PID
+namespace from all others. 🙇&lt;/strong>&lt;/p></description></item><item><title>Race-free creation and opening of non-file inodes</title><link>https://uapi-group.org/kernel-features/wishlist/race-free-creation-and-opening-of-non-file-inodes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/race-free-creation-and-opening-of-non-file-inodes/</guid><description>&lt;p>A way to race-freely create an (non-file) inode and immediately
+open it. For regular files we have open(O_CREAT) for creating a
+new file inode, and returning a pinning fd to it. This is missing
+for other inode types, such as directories, device nodes,
+FIFOs. The lack of such functionality means that when populating a
+directory tree there&amp;rsquo;s always a race involved: the inodes first
+need to be created, and then opened to adjust their
+permissions/ownership/labels/timestamps/acls/xattrs/…, but in the
+time window between the creation and the opening they might be
+replaced by something else. Addressing this race without proper
+APIs is possible (by immediately fstat()ing what was opened, to
+verify that it has the right inode type), but difficult to get
+right. Hence, mkdirat_fd() that creates a directory &lt;em>and&lt;/em> returns
+an O_DIRECTORY fd to it would be great. As would be mknodeat_fd()
+that creates a device node, FIFO or (dead) socket and returns an
+O_PATH fd to it. And of course symlinkat_fd() that creates a
+symlink and returns an O_PATH fd to it.&lt;/p></description></item><item><title>Map different uids/gids to the same uids/gids?</title><link>https://uapi-group.org/kernel-features/wishlist/map-different-uids-gids-to-the-same-uids-gids/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/map-different-uids-gids-to-the-same-uids-gids/</guid><description>&lt;p>Explore the idea of mapping different uids/gids to the same uids/gids, i.e.
+65534:1000:1 50000:1000:1. This will only work if the mount is read-only as
+the kernel wouldn&amp;rsquo;t know what uid/gid would need to be put to disk
+otherwise (65534? 50000? the first one that is mapped?).&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Delegate multiple {g,u}ids to the same user. Merging
+ownership similar to how overlayfs merges files. Bindfs
+(&lt;a href="https://bindfs.org/docs/bindfs.1.html#sect3">https://bindfs.org/docs/bindfs.1.html#sect3&lt;/a>) allows this concept too.&lt;/p></description></item><item><title>blobfs</title><link>https://uapi-group.org/kernel-features/wishlist/blobfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/blobfs/</guid><description>&lt;p>&lt;a href="https://fuchsia.dev/fuchsia-src/concepts/filesystems/blobfs">&lt;code>blobfs&lt;/code>&lt;/a>
+for Linux. i.e. a minimalistic file system, that can store
+authenticated (Verity) data files, that can be written once, and
+not be modified after that, and provide stable handles (i.e. is
+content-addressable) to them.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This would deliver just about enough to place
+trusted OS resources (binaries, kernels, initrds, fs trees, other
+resources) in them, without having to trust the medium and IO
+underneath. Should be simple enough to even implement in a boot
+loader and similar, without making things vulnerable to rogue file
+system image attacks. The OS and its payloads (apps, containers,
+…) could then be composed from these resources, through means like
+overlayfs, namespacing and more.&lt;/p></description></item><item><title>Device cgroup guard to allow `mknod()` in non-initial userns</title><link>https://uapi-group.org/kernel-features/wishlist/device-cgroup-guard-to-allow-mknod-in-non-initial-userns/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/device-cgroup-guard-to-allow-mknod-in-non-initial-userns/</guid><description>&lt;p>If a container manager restricts its unprivileged (user namespaced)
+children by a device cgroup, it is not necessary to deny &lt;code>mknod()&lt;/code>
+anymore. Thus, user space applications may map devices on different
+locations in the file system by using &lt;code>mknod()&lt;/code> inside the container.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> A use case for this, which is applied by users of GyroidOS,
+is to run &lt;code>virsh&lt;/code> for VMs inside an unprivileged container. &lt;code>virsh&lt;/code> or
+libvirt creates device nodes, e.g., &lt;code>/var/run/libvirt/qemu/11-fgfg.dev/null&lt;/code>
+which currently fails in a non-initial userns, even if a cgroup device white
+list with the corresponding major, minor of &lt;code>/dev/null&lt;/code> exists. Thus, in
+this case the usual bind mounts or pre populated device nodes under &lt;code>/dev&lt;/code>
+are not sufficient.&lt;/p></description></item><item><title>Race-free mounting of block devices</title><link>https://uapi-group.org/kernel-features/wishlist/race-free-mounting-of-block-devices/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/race-free-mounting-of-block-devices/</guid><description>&lt;p>Introduce a new struct to &lt;code>fsconfig()&lt;/code> as an alternative to the
+&lt;code>source&lt;/code> property. The struct contains at least a pointer to a path,
+possibly a device minor and major, and a diskseq number. The VFS can
+expose a helper that filesystems can call and use the diskseq number
+to verify that the block device they are intending to mount is indeed
+the one they want to mount.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Race-free mounting of block devices.&lt;/p></description></item><item><title>Ability to reopen a `struct block_device`</title><link>https://uapi-group.org/kernel-features/wishlist/ability-to-reopen-a-struct-block-device/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/ability-to-reopen-a-struct-block-device/</guid><description>&lt;p>Add ability to reopen a &lt;code>struct block_device&lt;/code>. This would allow using
+&lt;code>blkdev_get_by_path()&lt;/code>/&lt;code>blkdev_get_{part,whole}()&lt;/code> to claim a device
+with &lt;code>BLK_OPEN_READ&lt;/code> and later on reopen with
+&lt;code>BLK_OPEN_READ | BLK_OPEN_WRITE&lt;/code>. This in turn would opening block
+devices at &lt;code>fsconfig(FS_CONFIG_SET_*)&lt;/code> time and then at &lt;code>fill_super()&lt;/code>
+time we would be able to reopen in case the &lt;code>!(fc-&amp;gt;sb_flags &amp;amp; SB_RDONLY)&lt;/code>.
+Overall this has the effect that we&amp;rsquo;re able to open devices early
+giving the user early errors when they set mount options rather than
+very late when the superblock is created.&lt;/p></description></item><item><title>Path-based ACL management in an LSM hook</title><link>https://uapi-group.org/kernel-features/wishlist/path-based-acl-management-in-an-lsm-hook/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/path-based-acl-management-in-an-lsm-hook/</guid><description>&lt;p>The LSM module API should have the ability to do path-based (not
+just inode-based) ACL management.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This would be useful in BPF-LSM modules such as
+systemd&amp;rsquo;s &lt;code>mntfsd&lt;/code> which allows unprivileged file system mounts in
+some cases, and which would like to restrict ACL handling based on
+the superblock involved.&lt;/p></description></item><item><title>Immutable layers for `overlayfs`</title><link>https://uapi-group.org/kernel-features/wishlist/immutable-layers-for-overlayfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/immutable-layers-for-overlayfs/</guid><description>&lt;p>&lt;code>overlayfs&lt;/code> should permit &lt;em>immutable&lt;/em> layers, i.e. layers whose
+non-directory inodes may not be overriden in an upper writable
+layer.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This would be useful when implementing &lt;code>/etc/&lt;/code> as a
+stack of overlayfs layers, each shipping configuration for a
+different facet of the system, with a writable layer on the top for
+local modifications. In such a scenario it would be useful to allow
+the user to change any configuration it likes, except of the files
+and other inodes shipped in the lower layers.&lt;/p></description></item><item><title>`ioctl()` API for `overlayfs`</title><link>https://uapi-group.org/kernel-features/wishlist/ioctl-api-for-overlayfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/ioctl-api-for-overlayfs/</guid><description>&lt;p>&lt;code>overlayfs&lt;/code> should have an &lt;code>ioctl()&lt;/code>-based API (or similar) for
+querying information of the backing file systems/block devices&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> In systemd in various areas we automatically find the
+block device backing the root file system and other file systems
+(Example: &lt;code>systemd-gpt-auto-generator&lt;/code> or &lt;code>bootctl&lt;/code> wull try to find
+auxiliary file systems of the OS image by looking in the GPT
+partition table the root file system is located in). While this
+logic is good enough to find the backing block devices of some more
+complex storage such as dm-crypt, dm-verity or btrfs, once
+&lt;code>overlayfs&lt;/code> is used as backing for the root file system this logic
+does not work anymore. It would be great if there was an API to
+simply query &lt;code>overlayfs&lt;/code> for the superblock information
+(i.e. &lt;code>.st_dev&lt;/code>) of the backing layers.&lt;/p></description></item><item><title>Automatic growing of `btrfs` filesystems</title><link>https://uapi-group.org/kernel-features/wishlist/automatic-growing-of-btrfs-filesystems/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/automatic-growing-of-btrfs-filesystems/</guid><description>&lt;p>An &lt;em>auto-grow&lt;/em> feature in &lt;code>btrfs&lt;/code> would be excellent.&lt;/p>
+&lt;p>If such a mode is enabled, &lt;code>btrfs&lt;/code> would automatically grow a file
+system up to the size of its backing block devices. Example: btrfs
+is created with 200M in size on a block device 2G in size. Once the
+file system is filled up fully, &lt;code>btrfs&lt;/code> would automatically grow the
+file system as need in the increments it needs, up to the 2G that
+the backing block device is in size.&lt;/p></description></item></channel></rss>

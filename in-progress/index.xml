@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>In Progress on UAPI Group Kernel Feature Wishlist</title><link>https://uapi-group.org/kernel-features/in-progress/</link><description>Recent content in In Progress on UAPI Group Kernel Feature Wishlist</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://uapi-group.org/kernel-features/in-progress/index.xml" rel="self" type="application/rss+xml"/><item><title>Create empty mount namespaces via `unshare(UNSHARE_EMPTY_MNTNS)` and `clone3(CLONE_EMPTY_MNTNS)`</title><link>https://uapi-group.org/kernel-features/in-progress/create-empty-mount-namespaces-via-unshare-unshare-empty-mntns-and-clone3-clone-empty-mntns/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/create-empty-mount-namespaces-via-unshare-unshare-empty-mntns-and-clone3-clone-empty-mntns/</guid><description>&lt;p>Now that we have support for &lt;code>nullfs&lt;/code> it is trivial to allow the
+creation of completely empty mount namespaces, i.e., mount namespaces
+that only have the &lt;code>nullfs&lt;/code> mount located at it&amp;rsquo;s root.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This allows to isolate tasks in completely empty mount
+namespaces. It also allows the caller to avoid copying its current mount
+table which is useless in the majority of container workload cases.&lt;/p></description></item><item><title>Ability to put user xattrs on `S_IFSOCK` socket entrypoint inodes in the file system</title><link>https://uapi-group.org/kernel-features/in-progress/ability-to-put-user-xattrs-on-s-ifsock-socket-entrypoint-inodes-in-the-file-system/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/ability-to-put-user-xattrs-on-s-ifsock-socket-entrypoint-inodes-in-the-file-system/</guid><description>&lt;p>Currently, the kernel only allows extended attributes in the
+&lt;code>user.*&lt;/code> namespace to be attached to directory and regular file
+inodes. It would be tremendously useful to allow them to be
+associated with socket inodes, too.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> There are two syslog RFCs in use today: RFC3164 and
+RFC5424. &lt;code>glibc&lt;/code>&amp;rsquo;s &lt;code>syslog()&lt;/code> API generates events close to the
+former, but there are programs which would like to generate the
+latter instead (as it supports structured logging). The two formats
+are not backwards compatible: a client sending RFC5424 messages to a
+server only understanding RFC3164 will cause an ugly mess. On Linux
+there&amp;rsquo;s only a single &lt;code>/dev/log&lt;/code> AF_UNIX/SOCK_DGRAM socket backing
+&lt;code>syslog()&lt;/code>, which is used in a one-way, fire-and-forget style. This
+means that feature negotation is not really possible within the
+protocol. Various tools bind mount the socket inode into &lt;code>chroot()&lt;/code>
+and container environments, hence it would be fantastic to associate
+supported feature information directly with the inode (and thus
+outside of the protocol) to make it easy for clients to determine
+which features are spoken on a socket, in a way that survives bind
+mounts. Implementation idea would be that syslog daemons
+implementing RFC5425 could simply set an xattr &lt;code>user.rfc5424&lt;/code> to &lt;code>1&lt;/code>
+(or something like that) on the socket inode, and clearly inform
+clients in a natural and simple way that they&amp;rsquo;d be happy to parse
+the newer format. Also see:
+&lt;a href="https://github.com/systemd/systemd/issues/19251">https://github.com/systemd/systemd/issues/19251&lt;/a> – This idea could
+also be extended to other sockets and other protocols: by setting
+some extended attribute on a socket inodes, services could advertise
+which protocols they support on them. For example D-Bus sockets
+could carry &lt;code>user.dbus&lt;/code> set to &lt;code>1&lt;/code>, and Varlink sockets
+&lt;code>user.varlink&lt;/code> set to &lt;code>1&lt;/code> and so on.&lt;/p></description></item><item><title>Support detached mounts with `pivot_root()`</title><link>https://uapi-group.org/kernel-features/in-progress/support-detached-mounts-with-pivot-root/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/support-detached-mounts-with-pivot-root/</guid><description>&lt;p>The new rootfs must currently refer to an attached mount. This restriction
+seems unnecessary. We should allow the new rootfs to refer to a detached
+mount.&lt;/p>
+&lt;p>This will allow a service- or container manager to create a new rootfs as
+a detached, private mount that isn&amp;rsquo;t exposed anywhere in the filesystem and
+then &lt;code>pivot_root()&lt;/code> into it.&lt;/p>
+&lt;p>Since &lt;code>pivot_root()&lt;/code> only takes path arguments the new rootfs would need to
+be passed via &lt;code>/proc/&amp;lt;pid&amp;gt;/fd/&amp;lt;nr&amp;gt;&lt;/code>. In the long run we should add a new
+&lt;code>pivot_root()&lt;/code> syscall operating on file descriptors instead of paths.&lt;/p></description></item><item><title>Create mount namespace with custom rootfs via `open_tree()` and `fsmount()`</title><link>https://uapi-group.org/kernel-features/in-progress/create-mount-namespace-with-custom-rootfs-via-open-tree-and-fsmount/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/create-mount-namespace-with-custom-rootfs-via-open-tree-and-fsmount/</guid><description>&lt;p>Add &lt;code>OPEN_TREE_NAMESPACE&lt;/code> flag to &lt;code>open_tree()&lt;/code> and &lt;code>FSMOUNT_NAMESPACE&lt;/code> flag
+to &lt;code>fsmount()&lt;/code> that create a new mount namespace with the specified mount tree
+as the rootfs mounted on top of a copy of the real rootfs. These return a
+namespace file descriptor instead of a mount file descriptor.&lt;/p>
+&lt;p>This allows &lt;code>OPEN_TREE_NAMESPACE&lt;/code> to function as a combined
+&lt;code>unshare(CLONE_NEWNS)&lt;/code> and &lt;code>pivot_root()&lt;/code>.&lt;/p>
+&lt;p>When creating containers the setup usually involves using &lt;code>CLONE_NEWNS&lt;/code> via
+&lt;code>clone3()&lt;/code> or &lt;code>unshare()&lt;/code>. This copies the caller&amp;rsquo;s complete mount namespace.
+The runtime will also assemble a new rootfs and then use &lt;code>pivot_root()&lt;/code> to
+switch the old mount tree with the new rootfs. Afterward it will recursively
+unmount the old mount tree thereby getting rid of all mounts.&lt;/p></description></item><item><title>Add immutable rootfs (`nullfs`)</title><link>https://uapi-group.org/kernel-features/in-progress/add-immutable-rootfs-nullfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/add-immutable-rootfs-nullfs/</guid><description>&lt;p>Currently &lt;code>pivot_root()&lt;/code> doesn&amp;rsquo;t work on the real rootfs because it
+cannot be unmounted. Userspace has to do a recursive removal of the
+initramfs contents manually before continuing the boot.&lt;/p>
+&lt;p>Add an immutable rootfs called &lt;code>nullfs&lt;/code> that serves as the parent mount
+for anything that is actually useful such as the tmpfs or ramfs for
+initramfs unpacking or the rootfs itself. The kernel mounts a
+tmpfs/ramfs on top of it, unpacks the initramfs and fires up userspace
+which mounts the rootfs and can then simply do:&lt;/p></description></item><item><title>Allow `MOVE_MOUNT_BENEATH` on the rootfs</title><link>https://uapi-group.org/kernel-features/in-progress/allow-move-mount-beneath-on-the-rootfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/allow-move-mount-beneath-on-the-rootfs/</guid><description>&lt;p>Allow &lt;code>MOVE_MOUNT_BENEATH&lt;/code> to target the caller&amp;rsquo;s rootfs, enabling
+root-switching without &lt;code>pivot_root(2)&lt;/code>. The traditional approach to
+switching the rootfs involves &lt;code>pivot_root(2)&lt;/code> or a &lt;code>chroot_fs_refs()&lt;/code>-based
+mechanism that atomically updates &lt;code>fs-&amp;gt;root&lt;/code> for all tasks sharing the
+same &lt;code>fs_struct&lt;/code>. This has consequences for &lt;code>fork()&lt;/code>, &lt;code>unshare(CLONE_FS)&lt;/code>,
+and &lt;code>setns()&lt;/code>.&lt;/p>
+&lt;p>Instead, decompose root-switching into individually atomic, locally-scoped
+steps:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>fd_tree &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">open_tree&lt;/span>(&lt;span style="color:#f92672">-&lt;/span>EBADF, &lt;span style="color:#e6db74">&amp;#34;/newroot&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> OPEN_TREE_CLONE &lt;span style="color:#f92672">|&lt;/span> OPEN_TREE_CLOEXEC);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">fchdir&lt;/span>(fd_tree);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">move_mount&lt;/span>(fd_tree, &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>, AT_FDCWD, &lt;span style="color:#e6db74">&amp;#34;/&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> MOVE_MOUNT_BENEATH &lt;span style="color:#f92672">|&lt;/span> MOVE_MOUNT_F_EMPTY_PATH);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">chroot&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;.&amp;#34;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">umount2&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;.&amp;#34;&lt;/span>, MNT_DETACH);&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Since each step only modifies the caller&amp;rsquo;s own state, the
+&lt;code>fork()&lt;/code>/&lt;code>unshare()&lt;/code>/&lt;code>setns()&lt;/code> races are eliminated by design.&lt;/p></description></item><item><title>Query mount information via file descriptor with `statmount()`</title><link>https://uapi-group.org/kernel-features/in-progress/query-mount-information-via-file-descriptor-with-statmount/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/query-mount-information-via-file-descriptor-with-statmount/</guid><description>&lt;p>Extend &lt;code>struct mnt_id_req&lt;/code> to accept a file descriptor and introduce
+&lt;code>STATMOUNT_BY_FD&lt;/code> flag. When a valid fd is provided and &lt;code>STATMOUNT_BY_FD&lt;/code>
+is set, &lt;code>statmount()&lt;/code> returns mount info about the mount the fd is on.&lt;/p>
+&lt;p>This works even for &amp;ldquo;unmounted&amp;rdquo; mounts (mounts that have been unmounted using
+&lt;code>umount2(mnt, MNT_DETACH)&lt;/code>), if you have access to a file descriptor on that
+mount. These unmounted mounts will have no mountpoint and no valid mount
+namespace, so &lt;code>STATMOUNT_MNT_POINT&lt;/code> and &lt;code>STATMOUNT_MNT_NS_ID&lt;/code> are unset in
+&lt;code>statmount.mask&lt;/code> for such mounts.&lt;/p></description></item></channel></rss>

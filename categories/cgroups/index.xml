@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Cgroups on UAPI Group Kernel Feature Wishlist</title><link>https://uapi-group.org/kernel-features/categories/cgroups/</link><description>Recent content in Cgroups on UAPI Group Kernel Feature Wishlist</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://uapi-group.org/kernel-features/categories/cgroups/index.xml" rel="self" type="application/rss+xml"/><item><title>`CLONE_PIDFD_AUTOKILL` semantics for PID 1</title><link>https://uapi-group.org/kernel-features/wishlist/clone-pidfd-autokill-semantics-for-pid-1/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/clone-pidfd-autokill-semantics-for-pid-1/</guid><description>&lt;p>Allow obtaining a &lt;code>CLONE_PIDFD_AUTOKILL&lt;/code> pidfd for PID 1. Currently
+PID 1 cannot hand off an autokill pidfd for itself. Allowing this would
+make it possible to create system-death-traps where the lifetime of
+PID 1 is tied to another process. PID 1 creates a &lt;code>CLONE_PIDFD_AUTOKILL&lt;/code>
+pidfd for itself, hands it off to another task, and closes its own copy.
+If that other task exits, PID 1 is taken down.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Tie the lifetime of PID 1 to a critical process such as a
+software TPM or other security-sensitive daemon. This ensures the system
+is brought down if the critical process dies, rather than continuing to
+run in a potentially compromised state.&lt;/p></description></item><item><title>Auxiliary socket message describing the sender's cgroup</title><link>https://uapi-group.org/kernel-features/wishlist/auxiliary-socket-message-describing-the-sender-s-cgroup/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/auxiliary-socket-message-describing-the-sender-s-cgroup/</guid><description>&lt;p>&lt;code>SCM_CGROUPID&lt;/code> or a similar auxiliary socket message, that allows
+receivers to figure out which cgroup a sender is part of.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> &lt;code>systemd-journald&lt;/code> picks up cgroup information from
+logging clients, in order to augment log records and allow
+filtering via this meta-information. In particular it derives
+service identity from that (so that requests such as &amp;ldquo;Show me all
+log messages of service X!&amp;rdquo; can be answered). This is currently
+racy, since it uses &lt;code>SCM_CREDS&lt;/code>&amp;rsquo; &lt;code>.pid&lt;/code> field for this, which it then
+used to load &lt;code>/proc/$PID/cgroup&lt;/code>. In particular for programs that
+log and immediately exit, the cgroup information frequently cannot
+be acquired anymore by &lt;code>systemd-journald&lt;/code>.&lt;/p></description></item><item><title>Per-cgroup limit for coredump sizes</title><link>https://uapi-group.org/kernel-features/wishlist/per-cgroup-limit-for-coredump-sizes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/per-cgroup-limit-for-coredump-sizes/</guid><description>&lt;p>A per-cgroup knob for coredump sizes. Currently coredump size
+control is strictly per process, and primarily under control of
+the processes themselves. It would be good if we had a per-cgroup
+knob instead, that is under control of the service manager.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> coredumps can be heavy to generate. For different
+usecases it would be good to be able to opt-in or opt-out
+dynamically from coredumps for specific services, at runtime
+without restarting them.&lt;/p></description></item><item><title>Device cgroup guard to allow `mknod()` in non-initial userns</title><link>https://uapi-group.org/kernel-features/wishlist/device-cgroup-guard-to-allow-mknod-in-non-initial-userns/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/device-cgroup-guard-to-allow-mknod-in-non-initial-userns/</guid><description>&lt;p>If a container manager restricts its unprivileged (user namespaced)
+children by a device cgroup, it is not necessary to deny &lt;code>mknod()&lt;/code>
+anymore. Thus, user space applications may map devices on different
+locations in the file system by using &lt;code>mknod()&lt;/code> inside the container.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> A use case for this, which is applied by users of GyroidOS,
+is to run &lt;code>virsh&lt;/code> for VMs inside an unprivileged container. &lt;code>virsh&lt;/code> or
+libvirt creates device nodes, e.g., &lt;code>/var/run/libvirt/qemu/11-fgfg.dev/null&lt;/code>
+which currently fails in a non-initial userns, even if a cgroup device white
+list with the corresponding major, minor of &lt;code>/dev/null&lt;/code> exists. Thus, in
+this case the usual bind mounts or pre populated device nodes under &lt;code>/dev&lt;/code>
+are not sufficient.&lt;/p></description></item><item><title>Add process by PIDFD to a cgroup</title><link>https://uapi-group.org/kernel-features/wishlist/add-process-by-pidfd-to-a-cgroup/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/add-process-by-pidfd-to-a-cgroup/</guid><description>&lt;p>At the moment the canonical way to add a process to a cgroup is by
+echoing its PID into the &lt;code>cgroup.procs&lt;/code> attribute in the target
+cgroupfs directory of the cgroup. This is safe as long as the
+process doing so just forked off the process it wants to migrate and
+hence can control that it hasn&amp;rsquo;t been reaped yet, and hence
+guarantees the PID is valid. This is racy however if &amp;ldquo;foreign&amp;rdquo;
+processes shall be moved into the cgroup.&lt;/p></description></item></channel></rss>

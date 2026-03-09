@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Processes on UAPI Group Kernel Feature Wishlist</title><link>https://uapi-group.org/kernel-features/categories/processes/</link><description>Recent content in Processes on UAPI Group Kernel Feature Wishlist</description><generator>Hugo</generator><language>en-us</language><atom:link href="https://uapi-group.org/kernel-features/categories/processes/index.xml" rel="self" type="application/rss+xml"/><item><title>Create empty mount namespaces via `unshare(UNSHARE_EMPTY_MNTNS)` and `clone3(CLONE_EMPTY_MNTNS)`</title><link>https://uapi-group.org/kernel-features/in-progress/create-empty-mount-namespaces-via-unshare-unshare-empty-mntns-and-clone3-clone-empty-mntns/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/create-empty-mount-namespaces-via-unshare-unshare-empty-mntns-and-clone3-clone-empty-mntns/</guid><description>&lt;p>Now that we have support for &lt;code>nullfs&lt;/code> it is trivial to allow the
+creation of completely empty mount namespaces, i.e., mount namespaces
+that only have the &lt;code>nullfs&lt;/code> mount located at it&amp;rsquo;s root.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This allows to isolate tasks in completely empty mount
+namespaces. It also allows the caller to avoid copying its current mount
+table which is useless in the majority of container workload cases.&lt;/p></description></item><item><title>Namespace ioctl to translate a PID between PID namespaces</title><link>https://uapi-group.org/kernel-features/completed/namespace-ioctl-to-translate-a-pid-between-pid-namespaces/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/namespace-ioctl-to-translate-a-pid-between-pid-namespaces/</guid><description>&lt;p>[x] Namespace ioctl to translate a PID between PID namespaces&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>ca567df74a28a9fb368c6b2d93e864113f73f5c2 (&amp;quot;nsfs: add pid translation ioctls&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> This makes it possible to e.g., figure out what a given PID in
+a PID namespace corresponds to in the caller&amp;rsquo;s PID namespace. For example, to
+figure out what the PID of PID 1 inside of a given PID namespace is.&lt;/p></description></item><item><title>`CLONE_PIDFD_AUTOKILL` semantics for PID 1</title><link>https://uapi-group.org/kernel-features/wishlist/clone-pidfd-autokill-semantics-for-pid-1/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/clone-pidfd-autokill-semantics-for-pid-1/</guid><description>&lt;p>Allow obtaining a &lt;code>CLONE_PIDFD_AUTOKILL&lt;/code> pidfd for PID 1. Currently
+PID 1 cannot hand off an autokill pidfd for itself. Allowing this would
+make it possible to create system-death-traps where the lifetime of
+PID 1 is tied to another process. PID 1 creates a &lt;code>CLONE_PIDFD_AUTOKILL&lt;/code>
+pidfd for itself, hands it off to another task, and closes its own copy.
+If that other task exits, PID 1 is taken down.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Tie the lifetime of PID 1 to a critical process such as a
+software TPM or other security-sensitive daemon. This ensures the system
+is brought down if the critical process dies, rather than continuing to
+run in a potentially compromised state.&lt;/p></description></item><item><title>API to determine the parent process ID of a pidfd</title><link>https://uapi-group.org/kernel-features/completed/api-to-determine-the-parent-process-id-of-a-pidfd/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/api-to-determine-the-parent-process-id-of-a-pidfd/</guid><description>&lt;p>[x] API to determine the parent process ID of a pidfd&lt;/p>
+&lt;p>An API to determine the parent process ID (ppid) of a pidfd would be
+good.&lt;/p>
+&lt;p>This information is relevant to code dealing with pidfds, since if
+the ppid of a pidfd matches the process own pid it can call
+&lt;code>waitid()&lt;/code> on the process, if it doesn&amp;rsquo;t it cannot and such a call
+would fail. It would be very useful if this could be determined
+easily before even calling that syscall.&lt;/p></description></item><item><title>Set `comm` field before `exec()`</title><link>https://uapi-group.org/kernel-features/completed/set-comm-field-before-exec/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/set-comm-field-before-exec/</guid><description>&lt;p>[x] Set &lt;code>comm&lt;/code> field before &lt;code>exec()&lt;/code>&lt;/p>
+&lt;p>There should be a way to control the process&amp;rsquo; &lt;code>comm&lt;/code> field if
+started via &lt;code>fexecve()&lt;/code>/&lt;code>execveat()&lt;/code>.&lt;/p>
+&lt;p>Right now, when &lt;code>fexecve()&lt;/code>/&lt;code>execveat()&lt;/code> is used, the &lt;code>comm&lt;/code> field
+(i.e. &lt;code>/proc/self/comm&lt;/code>) contains a name derived of the numeric fd,
+which breaks &lt;code>ps -C …&lt;/code> and various other tools. In particular when
+the fd was opened with &lt;code>O_CLOEXEC&lt;/code>, the number of the fd in the old
+process is completely meaningless.&lt;/p></description></item><item><title>Create mount namespace with custom rootfs via `open_tree()` and `fsmount()`</title><link>https://uapi-group.org/kernel-features/in-progress/create-mount-namespace-with-custom-rootfs-via-open-tree-and-fsmount/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/create-mount-namespace-with-custom-rootfs-via-open-tree-and-fsmount/</guid><description>&lt;p>Add &lt;code>OPEN_TREE_NAMESPACE&lt;/code> flag to &lt;code>open_tree()&lt;/code> and &lt;code>FSMOUNT_NAMESPACE&lt;/code> flag
+to &lt;code>fsmount()&lt;/code> that create a new mount namespace with the specified mount tree
+as the rootfs mounted on top of a copy of the real rootfs. These return a
+namespace file descriptor instead of a mount file descriptor.&lt;/p>
+&lt;p>This allows &lt;code>OPEN_TREE_NAMESPACE&lt;/code> to function as a combined
+&lt;code>unshare(CLONE_NEWNS)&lt;/code> and &lt;code>pivot_root()&lt;/code>.&lt;/p>
+&lt;p>When creating containers the setup usually involves using &lt;code>CLONE_NEWNS&lt;/code> via
+&lt;code>clone3()&lt;/code> or &lt;code>unshare()&lt;/code>. This copies the caller&amp;rsquo;s complete mount namespace.
+The runtime will also assemble a new rootfs and then use &lt;code>pivot_root()&lt;/code> to
+switch the old mount tree with the new rootfs. Afterward it will recursively
+unmount the old mount tree thereby getting rid of all mounts.&lt;/p></description></item><item><title>Make statx() on a pidfd return additional info</title><link>https://uapi-group.org/kernel-features/completed/make-statx-on-a-pidfd-return-additional-info/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/make-statx-on-a-pidfd-return-additional-info/</guid><description>&lt;p>Make statx() on a pidfd return additional recognizable identifiers in
+&lt;code>.stx_btime&lt;/code>.&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>It would be fantastic if issuing statx() on any pidfd would return
+the start time of the process in &lt;code>.stx_btime&lt;/code> even after the process
+died.&lt;/p>
+&lt;p>These fields should in particular be queriable &lt;em>after&lt;/em> the process
+already exited and has been reaped, i.e. after its PID has already
+been recycled.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> In systemd we maintain lists of processes in a hash
+table. Right now, the key is the PID, but this is less than ideal
+because of PID recycling. By being able to use the &lt;code>.stx_btime&lt;/code>
+and/or &lt;code>.stx_ino&lt;/code> fields instead would be perfect to safely
+identify, track and compare process even after they ceased to exist.&lt;/p></description></item><item><title>Add immutable rootfs (`nullfs`)</title><link>https://uapi-group.org/kernel-features/in-progress/add-immutable-rootfs-nullfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/add-immutable-rootfs-nullfs/</guid><description>&lt;p>Currently &lt;code>pivot_root()&lt;/code> doesn&amp;rsquo;t work on the real rootfs because it
+cannot be unmounted. Userspace has to do a recursive removal of the
+initramfs contents manually before continuing the boot.&lt;/p>
+&lt;p>Add an immutable rootfs called &lt;code>nullfs&lt;/code> that serves as the parent mount
+for anything that is actually useful such as the tmpfs or ramfs for
+initramfs unpacking or the rootfs itself. The kernel mounts a
+tmpfs/ramfs on top of it, unpacks the initramfs and fires up userspace
+which mounts the rootfs and can then simply do:&lt;/p></description></item><item><title>Allow `MOVE_MOUNT_BENEATH` on the rootfs</title><link>https://uapi-group.org/kernel-features/in-progress/allow-move-mount-beneath-on-the-rootfs/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/in-progress/allow-move-mount-beneath-on-the-rootfs/</guid><description>&lt;p>Allow &lt;code>MOVE_MOUNT_BENEATH&lt;/code> to target the caller&amp;rsquo;s rootfs, enabling
+root-switching without &lt;code>pivot_root(2)&lt;/code>. The traditional approach to
+switching the rootfs involves &lt;code>pivot_root(2)&lt;/code> or a &lt;code>chroot_fs_refs()&lt;/code>-based
+mechanism that atomically updates &lt;code>fs-&amp;gt;root&lt;/code> for all tasks sharing the
+same &lt;code>fs_struct&lt;/code>. This has consequences for &lt;code>fork()&lt;/code>, &lt;code>unshare(CLONE_FS)&lt;/code>,
+and &lt;code>setns()&lt;/code>.&lt;/p>
+&lt;p>Instead, decompose root-switching into individually atomic, locally-scoped
+steps:&lt;/p>
+&lt;div class="highlight">&lt;pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;">&lt;code class="language-c" data-lang="c">&lt;span style="display:flex;">&lt;span>fd_tree &lt;span style="color:#f92672">=&lt;/span> &lt;span style="color:#a6e22e">open_tree&lt;/span>(&lt;span style="color:#f92672">-&lt;/span>EBADF, &lt;span style="color:#e6db74">&amp;#34;/newroot&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> OPEN_TREE_CLONE &lt;span style="color:#f92672">|&lt;/span> OPEN_TREE_CLOEXEC);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">fchdir&lt;/span>(fd_tree);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">move_mount&lt;/span>(fd_tree, &lt;span style="color:#e6db74">&amp;#34;&amp;#34;&lt;/span>, AT_FDCWD, &lt;span style="color:#e6db74">&amp;#34;/&amp;#34;&lt;/span>,
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span> MOVE_MOUNT_BENEATH &lt;span style="color:#f92672">|&lt;/span> MOVE_MOUNT_F_EMPTY_PATH);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">chroot&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;.&amp;#34;&lt;/span>);
+&lt;/span>&lt;/span>&lt;span style="display:flex;">&lt;span>&lt;span style="color:#a6e22e">umount2&lt;/span>(&lt;span style="color:#e6db74">&amp;#34;.&amp;#34;&lt;/span>, MNT_DETACH);&lt;/span>&lt;/span>&lt;/code>&lt;/pre>&lt;/div>&lt;p>Since each step only modifies the caller&amp;rsquo;s own state, the
+&lt;code>fork()&lt;/code>/&lt;code>unshare()&lt;/code>/&lt;code>setns()&lt;/code> races are eliminated by design.&lt;/p></description></item><item><title>Unlinking via two file descriptors</title><link>https://uapi-group.org/kernel-features/wishlist/unlinking-via-two-file-descriptors/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/unlinking-via-two-file-descriptors/</guid><description>&lt;p>&lt;code>unlinkat3(dir_fd, name, inode_fd)&lt;/code>: taking one file descriptor
+for the directory to remove a file in, and another one referring
+to the inode of the filename to remove. This call should only
+succeed if the specified filename still refers to the specified
+inode.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> code that operates on a well-know path that might be
+shared by multiple programs that jointly manage it might want to
+safely remove a filename under the guarantee it still refers to
+the expected inode. As a specific example, consider lock files,
+that should be cleaned up only if they still refer to the assumed
+owner&amp;rsquo;s instance, but leave the file in place if another process
+already took over the filename.&lt;/p></description></item><item><title>Determining if a mount point belongs to the current user</title><link>https://uapi-group.org/kernel-features/wishlist/determining-if-a-mount-point-belongs-to-the-current-user/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/determining-if-a-mount-point-belongs-to-the-current-user/</guid><description>&lt;p>Ability to determine if a mount point belongs to the current user
+namespace, in order to check if there&amp;rsquo;s a chance a process can
+safely unmount it (as that only works for mounts owned by the same
+user namespaces — or one further down the tree, but not any up the
+tree). A simple, additional field in &lt;code>/proc/self/mountinfo&lt;/code>
+container the owning user namespace ID would probably already
+suffice.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> the &lt;code>systemd&lt;/code> system and service manager tries to unmount
+all established mounts on shutdown. Inside of container
+environments where specific mounts are established by the
+container manager (and not the payload itself) this will
+ultimately fail if user namespaces are enabled. In order to clean
+up the shutdown logic it would be very good to be able to
+determine whether a specific mount could even possibly be
+unmounted or whether it&amp;rsquo;s not worth the effort to include the
+unmount in the system shutdown transaction.&lt;/p></description></item><item><title>`SCM_PIDFD` auxiliary socket message</title><link>https://uapi-group.org/kernel-features/completed/scm-pidfd-auxiliary-socket-message/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/scm-pidfd-auxiliary-socket-message/</guid><description>&lt;p>[x] &lt;code>SCM_PIDFD&lt;/code> or similar auxiliary socket message, that is a modern
+version of the &lt;code>SCM_CREDS&lt;/code> message&amp;rsquo;s &lt;code>.pid&lt;/code> field, and provides a
+&lt;code>pidfd&lt;/code> file descriptor to the originating peer process.&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>5e2ff6704a275be00 (&amp;quot;scm: add SO_PASSPIDFD and SCM_PIDFD)&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> security infrastructure (such as PolicyKit) can safely
+reference clients this way without fearing PID
+recycling. &lt;code>systemd-journald&lt;/code> can acquire peer metadata this way in
+a less racy fashion, in particular safe against PID recycling.&lt;/p></description></item><item><title>Excluding processes watched via `pidfd` from `waitid(P_ALL, …)`</title><link>https://uapi-group.org/kernel-features/wishlist/excluding-processes-watched-via-pidfd-from-waitid-p-all/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/excluding-processes-watched-via-pidfd-from-waitid-p-all/</guid><description>&lt;p>&lt;strong>Use-Case:&lt;/strong> various programs use &lt;code>waitid(P_ALL, …)&lt;/code> to collect exit
+information of exited child processes. In particular PID 1 and
+processes using &lt;code>PR_SET_CHILD_SUBREAPER&lt;/code> use this as they may
+collect unexpected children that have been reparented from dying
+sub-processes, and that need to be reaped in order to clean up the
+PID space. Currently, these programs cannot easily mix waiting for
+specific sub-processes via &lt;code>pidfd&lt;/code> with waiting for the other
+&lt;em>unexpected&lt;/em> children via &lt;code>waitid(P_ALL, …)&lt;/code> since the latter also
+reaps (and thus invalidates) the pidfd-tracked
+children. Specifically, the &lt;code>systemd&lt;/code> service manager would like
+to use &lt;code>pidfd&lt;/code>s to remove PID recycling security issues, but
+currently cannot as it also needs to generically wait for such
+unexpected children.&lt;/p></description></item><item><title>Asynchronous `close()`</title><link>https://uapi-group.org/kernel-features/wishlist/asynchronous-close/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/asynchronous-close/</guid><description>&lt;p>An asynchronous or forced &lt;code>close()&lt;/code>, that guarantees that
+userspace doesn&amp;rsquo;t have to risk blocking for longer periods of time
+when trying to get rid of unwanted file descriptors, possibly
+received via &lt;code>recvmsg()&lt;/code> + &lt;code>SCM_RIGHTS&lt;/code> (see above). Currently,
+&lt;code>close()&lt;/code> of various file descriptors (for example those referring
+to slow storage, e.g. non-responding NFS servers and such) might
+take arbitrary amounts of time, potentially into the minute range
+and more. This makes it risky accepting file descriptors on
+publicly accessible &lt;code>AF_UNIX&lt;/code> sockets, the way like IPC brokers
+(e.g. D-Bus) do it: if a rogue client keeps sending file
+descriptors that because unexpected must be closed immediately it
+might cause the receiving process to effectively crawl, when it is
+busy closing them all. A special form of &lt;code>close()&lt;/code> that simply
+detaches a file descriptor from the file descriptor table without
+blocking on IO in any form would be great to close this issue.&lt;/p></description></item><item><title>A timeout for the `flock()` syscall</title><link>https://uapi-group.org/kernel-features/wishlist/a-timeout-for-the-flock-syscall/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/a-timeout-for-the-flock-syscall/</guid><description>&lt;p>A timeout for the &lt;code>flock()&lt;/code> syscall. Faking the time-out in userspace
+is nasty: most code does it with &lt;code>alarm()&lt;/code> (or equivalent APIs), but
+that&amp;rsquo;s racy since on a heavily loaded system the timeout might trigger
+before the &lt;code>flock()&lt;/code> call is entered, in particular if short time-outs
+shall be used. More accurate is to do the locking in a short-lived
+child processed, but that&amp;rsquo;s difficult already in C, and almost
+impossible in languages that do not allow &lt;code>fork()&lt;/code> without &lt;code>execve()&lt;/code>.&lt;/p></description></item><item><title>Additional identifiers for pidfds in `statx()`</title><link>https://uapi-group.org/kernel-features/completed/additional-identifiers-for-pidfds-in-statx/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/additional-identifiers-for-pidfds-in-statx/</guid><description>&lt;p>[x] Make &lt;code>statx()&lt;/code> on a pidfd return additional recognizable identifiers
+in &lt;code>.stx_ino&lt;/code>.&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>cb12fd8e0dabb9a1c8aef55a6a41e2c255fcdf4b pidfd: add pidfs&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>It would be fantastic if issuing statx() on any pidfd would return some
+reasonably stable 64bit identifier for the process in &lt;code>.stx_ino&lt;/code>. This would
+be perfect to identify processes pinned by a pidfd, and compare them.&lt;/p></description></item><item><title>Disabling reception of `SCM_RIGHTS` for `AF_UNIX` sockets</title><link>https://uapi-group.org/kernel-features/completed/disabling-reception-of-scm-rights-for-af-unix-sockets/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/disabling-reception-of-scm-rights-for-af-unix-sockets/</guid><description>&lt;p>[x] Ability to turn off &lt;code>SCM_RIGHTS&lt;/code> reception for &lt;code>AF_UNIX&lt;/code>
+sockets.&lt;/p>
+&lt;p>&lt;strong>🙇 &lt;code>77cbe1a6d8730a07f99f9263c2d5f2304cf5e830 (&amp;quot;af_unix: Introduce SO_PASSRIGHTS&amp;quot;)&lt;/code> 🙇&lt;/strong>&lt;/p>
+&lt;p>Right now reception of file descriptors is always on when
+a process makes the mistake of invoking &lt;code>recvmsg()&lt;/code> on such a
+socket. This is problematic since &lt;code>SCM_RIGHTS&lt;/code> installs file
+descriptors in the recipient process&amp;rsquo; file descriptor
+table. Getting rid of these file descriptors is not necessarily
+easy, as they could refer to &amp;ldquo;slow-to-close&amp;rdquo; files (think: dirty
+file descriptor referring to a file on an unresponsive NFS server,
+or some device file descriptor), that might cause the recipient to
+block for a longer time when it tries to them. Programs reading
+from an &lt;code>AF_UNIX&lt;/code> socket currently have three options:&lt;/p></description></item><item><title>A reliable way to check for PID namespacing</title><link>https://uapi-group.org/kernel-features/completed/a-reliable-way-to-check-for-pid-namespacing/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/completed/a-reliable-way-to-check-for-pid-namespacing/</guid><description>&lt;p>[x] A reliable (non-heuristic) way to detect from userspace if the
+current process is running in a PID namespace that is not the main
+PID namespace. PID namespaces are probably the primary type of
+namespace that identify a container environment. While many
+heuristics exist to determine generically whether one is executed
+inside a container, it would be good to have a correct,
+well-defined way to determine this.&lt;/p>
+&lt;p>&lt;strong>🙇 The inode number of the root PID namespace is fixed (0xEFFFFFFC)
+and now considered API. It can be used to distinguish the root PID
+namespace from all others. 🙇&lt;/strong>&lt;/p></description></item><item><title>Add `MOUNT_SETATTR_LOCKED` flag to `mount_setattr()`</title><link>https://uapi-group.org/kernel-features/wishlist/add-mount-setattr-locked-flag-to-mount-setattr/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/add-mount-setattr-locked-flag-to-mount-setattr/</guid><description>&lt;p>Add a new &lt;code>MOUNT_SETATTR_LOCKED&lt;/code> flag to &lt;code>mount_setattr(..., ..., MOUNT_SETATTR_LOCKED, ..., ...)&lt;/code>.
+The &lt;code>MOUNT_SETATTR_LOCKED&lt;/code> flag allow a &lt;code>ns_capable(mntns-&amp;gt;user_ns, CAP_SYS_ADMIN)&lt;/code> caller to lock all mount properties. The mount properties
+cannot be changed anymore.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> allowing processes to lock mount properties even for
+privileged processes. Locking mount properties would currently involve
+having to have the mount namespace of the container be owned by an ancestor
+user namespace. But this doesn&amp;rsquo;t just lock a single mount or mount subtree
+it locks all mounts in the mount namespace, i.e., the mount table cannot be
+altered.&lt;/p></description></item><item><title>Extend `setns()` to allow attaching to all new namespaces of a process</title><link>https://uapi-group.org/kernel-features/wishlist/extend-setns-to-allow-attaching-to-all-new-namespaces-of-a-process/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/extend-setns-to-allow-attaching-to-all-new-namespaces-of-a-process/</guid><description>&lt;p>Add an extension to &lt;code>setns()&lt;/code> to allow attaching to all namespaces of
+a process &lt;code>SETNS_PIDFD_ALL&lt;/code> different from the caller&amp;rsquo;s namespaces.
+Currently specifying e.g., &lt;code>CLONE_NEWUSER&lt;/code> fails if the caller is in the
+same user namespace as the target process. This is very inconvenient.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> Make it trivial to attach to all namespaces of a process
+without having to figure out whether the caller is already in the same
+namespace or not.&lt;/p></description></item><item><title>Per-cgroup limit for coredump sizes</title><link>https://uapi-group.org/kernel-features/wishlist/per-cgroup-limit-for-coredump-sizes/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/per-cgroup-limit-for-coredump-sizes/</guid><description>&lt;p>A per-cgroup knob for coredump sizes. Currently coredump size
+control is strictly per process, and primarily under control of
+the processes themselves. It would be good if we had a per-cgroup
+knob instead, that is under control of the service manager.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> coredumps can be heavy to generate. For different
+usecases it would be good to be able to opt-in or opt-out
+dynamically from coredumps for specific services, at runtime
+without restarting them.&lt;/p></description></item><item><title>`AT_EMPTY_PATH` support for `unlinkat()`</title><link>https://uapi-group.org/kernel-features/wishlist/at-empty-path-support-for-unlinkat/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/at-empty-path-support-for-unlinkat/</guid><description>&lt;p>&lt;strong>Use-Case:&lt;/strong> When dealing with files/directories, allow passing
+around only a file descriptor without having to keep the path around
+to be able to unlink the file/directory.&lt;/p></description></item><item><title>Add process by PIDFD to a cgroup</title><link>https://uapi-group.org/kernel-features/wishlist/add-process-by-pidfd-to-a-cgroup/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/add-process-by-pidfd-to-a-cgroup/</guid><description>&lt;p>At the moment the canonical way to add a process to a cgroup is by
+echoing its PID into the &lt;code>cgroup.procs&lt;/code> attribute in the target
+cgroupfs directory of the cgroup. This is safe as long as the
+process doing so just forked off the process it wants to migrate and
+hence can control that it hasn&amp;rsquo;t been reaped yet, and hence
+guarantees the PID is valid. This is racy however if &amp;ldquo;foreign&amp;rdquo;
+processes shall be moved into the cgroup.&lt;/p></description></item><item><title>`AT_EMPTY_PATH` support for `openat()` and `openat2()`</title><link>https://uapi-group.org/kernel-features/wishlist/at-empty-path-support-for-openat-and-openat2/</link><pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate><guid>https://uapi-group.org/kernel-features/wishlist/at-empty-path-support-for-openat-and-openat2/</guid><description>&lt;p>To get an operable version of an &lt;code>O_PATH&lt;/code> file descriptors, it is
+possible to use &lt;code>openat(fd, &amp;quot;.&amp;quot;, O_DIRECTORY)&lt;/code> for directories, but
+other files currently require going through
+&lt;code>open(&amp;quot;/proc/&amp;lt;pid&amp;gt;/fd/&amp;lt;nr&amp;gt;&amp;quot;)&lt;/code> which depends on a functioning &lt;code>procfs&lt;/code>.&lt;/p>
+&lt;p>FreeBSD already has &lt;code>O_EMPTY_PATH&lt;/code> for &lt;code>openat&lt;/code>, while &lt;code>fstatat&lt;/code> and
+similar functions have &lt;code>AT_EMPTY_PATH&lt;/code>.&lt;/p>
+&lt;p>&lt;strong>Use-Case:&lt;/strong> When dealing with &lt;code>O_PATH&lt;/code> file descriptors, allow
+re-opening an operable version without the need of &lt;code>procfs&lt;/code>.&lt;/p></description></item></channel></rss>
