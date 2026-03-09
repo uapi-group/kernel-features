@@ -111,6 +111,25 @@ namespace, so `STATMOUNT_MNT_POINT` and `STATMOUNT_MNT_NS_ID` are unset in
 needing the mount ID, which is particularly useful for detached or unmounted
 mounts.
 
+### `AT_EMPTY_PATH` support `for unlinkat()`
+
+**Use-Case:** When dealing with files/directories, allow passing
+around only a file descriptor without having to keep the path around
+to be able to unlink the file/directory.
+
+### `AT_EMPTY_PATH` support for `openat()` and `openat2()`
+
+To get an operable version of an `O_PATH` file descriptors, it is
+possible to use `openat(fd, ".", O_DIRECTORY)` for directories, but
+other files currently require going through
+`open("/proc/<pid>/fd/<nr>")` which depends on a functioning `procfs`.
+
+FreeBSD already has `O_EMPTY_PATH` for `openat`, while `fstatat` and
+similar functions have `AT_EMPTY_PATH`.
+
+**Use-Case:** When dealing with `O_PATH` file descriptors, allow
+re-opening an operable version without the need of `procfs`.
+
 ---
 
 ### TODO
@@ -500,12 +519,6 @@ An initial group internal RFC exists in
 (https://github.com/quitschbo/linux/tree/devcg_guard_rfc).
 See commit message for more implementation specific details.
 
-### `AT_EMPTY_PATH` support `for unlinkat()`
-
-**Use-Case:** When dealing with files/directories, allow passing
-around only a file descriptor without having to keep the path around
-to be able to unlink the file/directory.
-
 ### Race-free mounting of block devices
 
 Introduce a new struct to `fsconfig()` as an alternative to the
@@ -696,19 +709,6 @@ but return a marker instead (i.e. negative integer, maybe `-EPERM`) that
 tells userspace that there was an fd, but it was not allowed through.
 
 **Use-Case:** Any code that wants to use `SCM_RIGHTS` properly.
-
-### `AT_EMPTY_PATH` support for `openat()` and `openat2()`
-
-To get an operable version of an `O_PATH` file descriptors, it is
-possible to use `openat(fd, ".", O_DIRECTORY)` for directories, but
-other files currently require going through
-`open("/proc/<pid>/fd/<nr>")` which depends on a functioning `procfs`.
-
-FreeBSD already has `O_EMPTY_PATH` for `openat`, while `fstatat` and
-similar functions have `AT_EMPTY_PATH`.
-
-**Use-Case:** When dealing with `O_PATH` file descriptors, allow
-re-opening an operable version without the need of `procfs`.
 
 ---
 
