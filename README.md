@@ -252,6 +252,11 @@ it with a pidfd right away. There are two possible approaches:
 Permission checking would have to be strict. It should probably only be
 allowed for the current thread-group leader on itself.
 
+Note also that the kernel currently simply refuses to deliver `SIGKILL`
+to PID 1 (global init). It will simply drop the signal. This will have
+to be changed. Any implementation would also have to ensure that the
+behavior post `SIGKILL` does not just involve freezing execution.
+
 ### inotify() events for BSD file locks
 
 BSD file locks (i.e. `flock()`, as opposed to POSIX `F_SETLK` and
