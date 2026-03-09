@@ -1,8 +1,6 @@
 ---
 title: "{{ replace .Name "-" " " | title }}"
-weight: 10
-status: wishlist
-categories: []
+date: {{ .Date }}
+draft: true
 ---
 
-**Use-Case:**
