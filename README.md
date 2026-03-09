@@ -16,6 +16,16 @@ associated problem space.
 
 ## In-Progress
 
+### Create empty mount namespaces via `unshare(UNSHARE_EMPTY_MNTNS)` and `clone3(CLONE_EMPTY_MNTNS)`
+
+Now that we have support for `nullfs` it is trivial to allow the
+creation of completely empty mount namespaces, i.e., mount namespaces
+that only have the `nullfs` mount located at it's root.
+
+**Usecase:** This allows to isolate tasks in completely empty mount
+namespaces. It also allows the caller to avoid copying its current mount
+table which is useless in the majority of container workload cases.
+
 ### Ability to put user xattrs on `S_IFSOCK` socket entrypoint inodes in the file system
 
 Currently, the kernel only allows extended attributes in the
