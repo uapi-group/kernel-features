@@ -16,6 +16,16 @@ associated problem space.
 
 ## In-Progress
 
+### Create empty mount namespaces via `unshare(UNSHARE_EMPTY_MNTNS)` and `clone3(CLONE_EMPTY_MNTNS)`
+
+Now that we have support for `nullfs` it is trivial to allow the
+creation of completely empty mount namespaces, i.e., mount namespaces
+that only have the `nullfs` mount located at it's root.
+
+**Usecase:** This allows to isolate tasks in completely empty mount
+namespaces. It also allows the caller to avoid copying its current mount
+table which is useless in the majority of container workload cases.
+
 ### Ability to put user xattrs on `S_IFSOCK` socket entrypoint inodes in the file system
 
 Currently, the kernel only allows extended attributes in the
@@ -94,6 +104,74 @@ fd_mntns = open_tree(-EBADF, "/var/lib/containers/wootwoot", OPEN_TREE_NAMESPACE
 This creates a mount namespace where "wootwoot" has become the rootfs. The
 caller can `setns()` into this new mount namespace and assemble additional
 mounts without copying and destroying the entire parent mount table.
+
+### Add immutable rootfs (`nullfs`)
+
+Currently `pivot_root()` doesn't work on the real rootfs because it
+cannot be unmounted. Userspace has to do a recursive removal of the
+initramfs contents manually before continuing the boot.
+
+Add an immutable rootfs called `nullfs` that serves as the parent mount
+for anything that is actually useful such as the tmpfs or ramfs for
+initramfs unpacking or the rootfs itself. The kernel mounts a
+tmpfs/ramfs on top of it, unpacks the initramfs and fires up userspace
+which mounts the rootfs and can then simply do:
+
+```c
+chdir(rootfs);
+pivot_root(".", ".");
+umount2(".", MNT_DETACH);
+```
+
+This also means that the rootfs mount in unprivileged namespaces doesn't
+need to become `MNT_LOCKED` anymore as it's guaranteed that the
+immutable rootfs remains permanently empty so there cannot be anything
+revealed by unmounting the covering mount.
+
+**Use-Case:** Simplifies the boot process by enabling `pivot_root()` to
+work directly on the real rootfs. Removes the need for traditional
+`switch_root` workarounds. In the future this also allows us to create
+completely empty mount namespaces without risking to leak anything.
+
+### Allow `MOVE_MOUNT_BENEATH` on the rootfs
+
+Allow `MOVE_MOUNT_BENEATH` to target the caller's rootfs, enabling
+root-switching without `pivot_root(2)`. The traditional approach to
+switching the rootfs involves `pivot_root(2)` or a `chroot_fs_refs()`-based
+mechanism that atomically updates `fs->root` for all tasks sharing the
+same `fs_struct`. This has consequences for `fork()`, `unshare(CLONE_FS)`,
+and `setns()`.
+
+Instead, decompose root-switching into individually atomic, locally-scoped
+steps:
+
+```c
+fd_tree = open_tree(-EBADF, "/newroot",
+                    OPEN_TREE_CLONE | OPEN_TREE_CLOEXEC);
+fchdir(fd_tree);
+move_mount(fd_tree, "", AT_FDCWD, "/",
+           MOVE_MOUNT_BENEATH | MOVE_MOUNT_F_EMPTY_PATH);
+chroot(".");
+umount2(".", MNT_DETACH);
+```
+
+Since each step only modifies the caller's own state, the
+`fork()`/`unshare()`/`setns()` races are eliminated by design.
+
+To make this work, `MNT_LOCKED` is transferred from the top mount to the
+mount beneath. The new mount takes over the job of protecting the parent
+mount from being revealed. This also makes it possible to safely modify
+an inherited mount table after `unshare(CLONE_NEWUSER | CLONE_NEWNS)`:
+
+```sh
+mount --beneath -t tmpfs tmpfs /proc
+umount -l /proc
+```
+
+**Use-Case:** Containers created with `unshare(CLONE_NEWUSER | CLONE_NEWNS)`
+can reshuffle an inherited mount table safely. `MOVE_MOUNT_BENEATH` on the
+rootfs makes it possible to switch out the rootfs without the costly
+`pivot_root(2)` and without cross-namespace vulnerabilities.
 
 ### Query mount information via file descriptor with `statmount()`
 
