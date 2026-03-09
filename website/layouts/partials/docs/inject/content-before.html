@@ -1,0 +1,19 @@
+{{ with .Params.status }}
+  {{ $label := . }}
+  {{ if eq . "in-progress" }}{{ $label = "In Progress" }}{{ end }}
+  {{ if eq . "wishlist" }}{{ $label = "Wishlist" }}{{ end }}
+  {{ if eq . "completed" }}{{ $label = "Completed" }}{{ end }}
+  <span class="status-badge status-{{ . }}">{{ $label }}</span>
+{{ end }}
+
+{{ with .Params.categories }}
+  <div class="category-pills">
+    {{ range . }}
+      <a class="category-pill" href='{{ "/categories/" | relURL }}{{ . | urlize }}/'>{{ . }}</a>
+    {{ end }}
+  </div>
+{{ end }}
+
+{{ with .Params.commit }}
+  <p><span class="commit-ref">{{ . }}</span></p>
+{{ end }}
