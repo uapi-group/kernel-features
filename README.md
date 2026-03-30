@@ -208,6 +208,39 @@ similar functions have `AT_EMPTY_PATH`.
 **Use-Case:** When dealing with `O_PATH` file descriptors, allow
 re-opening an operable version without the need of `procfs`.
 
+### Race-free creation and opening of non-file inodes
+
+A way to race-freely create an (non-file) inode and immediately
+open it. For regular files we have open(O_CREAT) for creating a
+new file inode, and returning a pinning fd to it. This is missing
+for other inode types, such as directories, device nodes,
+FIFOs. The lack of such functionality means that when populating a
+directory tree there's always a race involved: the inodes first
+need to be created, and then opened to adjust their
+permissions/ownership/labels/timestamps/acls/xattrs/…, but in the
+time window between the creation and the opening they might be
+replaced by something else. Addressing this race without proper
+APIs is possible (by immediately fstat()ing what was opened, to
+verify that it has the right inode type), but difficult to get
+right. Hence, mkdirat_fd() that creates a directory *and* returns
+an O_DIRECTORY fd to it would be great. As would be mknodeat_fd()
+that creates a device node, FIFO or (dead) socket and returns an
+O_PATH fd to it. And of course symlinkat_fd() that creates a
+symlink and returns an O_PATH fd to it.
+
+**Use-Case:** any program that creates/unpacks not just files, but
+directories, device nodes, fifos, and wants to ensure that they
+safely get the right attributes applied, even if other code might
+simultaneously have access to the same directory tree.
+
+### Upgrade masks in `openat2()`
+
+Add upgrade masks to `openat2()`. Extend `struct open_how` to allow
+restrict re-opening of file descriptors.
+
+**Use-Case:** block services or containers from re-opening/upgrading an
+`O_PATH` file descriptor through e.g. `/proc/<pid>/fd/<nr` as `O_WRONLY`.
+
 ---
 
 ### TODO
@@ -483,14 +516,6 @@ whose attributes cannot be changed by the caller don't want
 `mount_settattr()` to fail on the first mount it failed to convert. Give
 them a flag to request changes ignoring failures.
 
-### Upgrade masks in `openat2()`
-
-Add upgrade masks to `openat2()`. Extend `struct open_how` to allow
-restrict re-opening of file descriptors.
-
-**Use-Case:** block services or containers from re-opening/upgrading an
-`O_PATH` file descriptor through e.g. `/proc/<pid>/fd/<nr` as `O_WRONLY`.
-
 ### Make quotas work with user namespaces
 
 The quota codepaths in the kernel currently broken and inconsistent
@@ -545,31 +570,6 @@ knob instead, that is under control of the service manager.
 usecases it would be good to be able to opt-in or opt-out
 dynamically from coredumps for specific services, at runtime
 without restarting them.
-
-### Race-free creation and opening of non-file inodes
-
-A way to race-freely create an (non-file) inode and immediately
-open it. For regular files we have open(O_CREAT) for creating a
-new file inode, and returning a pinning fd to it. This is missing
-for other inode types, such as directories, device nodes,
-FIFOs. The lack of such functionality means that when populating a
-directory tree there's always a race involved: the inodes first
-need to be created, and then opened to adjust their
-permissions/ownership/labels/timestamps/acls/xattrs/…, but in the
-time window between the creation and the opening they might be
-replaced by something else. Addressing this race without proper
-APIs is possible (by immediately fstat()ing what was opened, to
-verify that it has the right inode type), but difficult to get
-right. Hence, mkdirat_fd() that creates a directory *and* returns
-an O_DIRECTORY fd to it would be great. As would be mknodeat_fd()
-that creates a device node, FIFO or (dead) socket and returns an
-O_PATH fd to it. And of course symlinkat_fd() that creates a
-symlink and returns an O_PATH fd to it.
-
-**Use-Case:** any program that creates/unpacks not just files, but
-directories, device nodes, fifos, and wants to ensure that they
-safely get the right attributes applied, even if other code might
-simultaneously have access to the same directory tree.
 
 ### Extend `io_uring` with classic synchronous system calls
 
