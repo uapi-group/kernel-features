@@ -233,6 +233,14 @@ directories, device nodes, fifos, and wants to ensure that they
 safely get the right attributes applied, even if other code might
 simultaneously have access to the same directory tree.
 
+### Upgrade masks in `openat2()`
+
+Add upgrade masks to `openat2()`. Extend `struct open_how` to allow
+restrict re-opening of file descriptors.
+
+**Use-Case:** block services or containers from re-opening/upgrading an
+`O_PATH` file descriptor through e.g. `/proc/<pid>/fd/<nr` as `O_WRONLY`.
+
 ---
 
 ### TODO
@@ -507,14 +515,6 @@ for that, but without risking to hang forever.
 whose attributes cannot be changed by the caller don't want
 `mount_settattr()` to fail on the first mount it failed to convert. Give
 them a flag to request changes ignoring failures.
-
-### Upgrade masks in `openat2()`
-
-Add upgrade masks to `openat2()`. Extend `struct open_how` to allow
-restrict re-opening of file descriptors.
-
-**Use-Case:** block services or containers from re-opening/upgrading an
-`O_PATH` file descriptor through e.g. `/proc/<pid>/fd/<nr` as `O_WRONLY`.
 
 ### Make quotas work with user namespaces
 
