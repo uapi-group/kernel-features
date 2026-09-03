@@ -224,6 +224,18 @@ similar functions have `AT_EMPTY_PATH`.
 **Use-Case:** When dealing with `O_PATH` file descriptors, allow
 re-opening an operable version without the need of `procfs`.
 
+### Reasonable EOF on SOCK_SEQPACKET
+
+Zero size datagrams cannot be distinguished from EOF on
+`SOCK_SEQPACKET`. Both will cause `recvmsg()` to return zero.
+
+Idea how to improve things: maybe define a new MSG_XYZ flag for this,
+which causes either of the two cases result in some recognizable error
+code returned rather than a 0.
+
+**Use-Case:** Any code that wants to use `SOCK_SEQPACKET` and cannot
+effort disallowing zero sized datagrams from their protocol.
+
 ---
 
 ### TODO
@@ -796,18 +808,6 @@ speaking the 2nd idea makes the 1st idea half-way redundant.
 **Use-Case:** Any code that uses `SCM_RIGHTS` generically (D-Bus and
 so on) needs this, so that it can reasonably handle SELinux AVC errors
 on received messages.
-
-### Reasonable EOF on SOCK_SEQPACKET
-
-Zero size datagrams cannot be distinguished from EOF on
-`SOCK_SEQPACKET`. Both will cause `recvmsg()` to return zero.
-
-Idea how to improve things: maybe define a new MSG_XYZ flag for this,
-which causes either of the two cases result in some recognizable error
-code returned rather than a 0.
-
-**Use-Case:** Any code that wants to use `SOCK_SEQPACKET` and cannot
-effort disallowing zero sized datagrams from their protocol.
 
 ### Reasonable Handling of SELinux dropping SCM_RIGHTS fds
 
