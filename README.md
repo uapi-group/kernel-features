@@ -823,6 +823,22 @@ tells userspace that there was an fd, but it was not allowed through.
 
 **Use-Case:** Any code that wants to use `SCM_RIGHTS` properly.
 
+### Exit process with a signal regardless of signal handler disposition
+
+A race-free implementation of `abort` is difficult because it may
+become necessary to change the `SIGABRT` signal handler disposition to
+`SIG_DFL` if the signal handler returns.  (The changed signal handler
+disposition may be incorrectly observed by a concurrent `execve`.)
+Having an `exit_signal` system call that terminates the process with
+the signal, regardless of disposition, would solve this issue.
+
+For the same reason, application crash handlers currently struggle
+with preserving the triggering signal, so that the invoking process
+receives notification that a signal happened.  An `exit_signal` system
+call could help here, too.
+
+**Use-Case:** Any application that wants to terminate with a signal.
+
 ---
 
 ## Finished Items
