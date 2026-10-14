@@ -839,6 +839,23 @@ call could help here, too.
 
 **Use-Case:** Any application that wants to terminate with a signal.
 
+### Get information about a Virtual Memory Area
+
+Applications that wish to understand their own address space currently
+have to parse `/proc/self/maps`. This is cumbersome (particularly from a
+signal handler), and only works if `/proc` is mounted. It also does not
+include the information about how far will a stack region
+(`MAP_GROWSDOWN`) be extended by the kernel before triggering a
+`SIGSEGV`. Applications needing this information need to resort to
+various workarounds.
+
+Exposing this information via a syscall (`prctl(PR_GET_VMA, ...)`) would
+avoid this guesswork and would be guaranteed to work in `/proc`-less
+environments.
+
+**Use-Case:** `pthread_getattr_np`, checking for stack overflow,
+in-process crash handlers examining application memory.
+
 ---
 
 ## Finished Items
