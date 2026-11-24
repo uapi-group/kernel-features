@@ -839,6 +839,37 @@ call could help here, too.
 
 **Use-Case:** Any application that wants to terminate with a signal.
 
+### Kernel log timestamps userspace can relate to a clock it can read
+
+The timestamps attached to kernel log records (as exposed via
+`/dev/kmsg`) are taken from the kernel-internal `local_clock()`. This
+clock is not accessible from userspace: it is neither
+`CLOCK_MONOTONIC`, nor `CLOCK_BOOTTIME`, nor `CLOCK_REALTIME`, and it
+may drift relative to all of them. This means userspace has no robust
+way to correlate kernel log records with its own log records or with
+any other timestamps it deals with. Userspace currently tends to
+pretend the kmsg timestamps are `CLOCK_MONOTONIC`, which is only
+approximately correct.
+
+Idea how to improve things: either make the kernel log timestamps use
+a clock userspace has access to via `clock_gettime()`
+(i.e. `CLOCK_MONOTONIC`, `CLOCK_BOOTTIME` or `CLOCK_REALTIME`), or
+alternatively make the clock the kernel log uses internally accessible
+to userspace, for example via a new `clockid_t`. If the clock used for
+the timestamps is made configurable, there needs to be a way for
+userspace to determine which clock is in use, for example via a
+read-only procfs/sysfs file that exposes it in a way that can be
+mapped directly to a `clockid_t` to pass to `clock_gettime()`.
+
+**Use-Case:** `systemd-journald` reads kernel log records from
+`/dev/kmsg` and merges them into the journal, where they are ordered
+and correlated with userspace log records by `CLOCK_MONOTONIC` and
+`CLOCK_REALTIME` timestamps. For that to work correctly it needs to
+be able to translate kernel log timestamps into these clocks.
+Similarly, `dmesg -T` attempts to convert kernel log timestamps into
+wallclock time, which produces misleading results when the clocks
+drift apart.
+
 ---
 
 ## Finished Items
