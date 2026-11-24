@@ -324,21 +324,6 @@ it. Currently, the temporary file for this must be created with a
 random name, `O_TMPFILE` cannot be used, since for these files
 atomic-replace is not supported, currently.
 
-### Ability to only open regular files
-
-`O_REGULAR` (inspired by the existing `O_DIRECTORY` flag for
-`open()`), which opens a file only if it is of type `S_IFREG`.
-
-**Use-Case:** this would be very useful to write secure programs
-that want to avoid being tricked into opening device nodes with
-special semantics while thinking they operate on regular
-files. This is particularly relevant as many device nodes (or even
-FIFOs) come with blocking I/O (or even blocking `open()`!) by
-default, which is not expected from regular files backed by "fast"
-disk I/O. Consider implementation of a naive web browser which is
-pointed to `file://dev/zero`, not expecting an endless amount of
-data to read.
-
 ### Determining if a mount point belongs to the current user
 
 Ability to determine if a mount point belongs to the current user
@@ -1249,3 +1234,20 @@ specific implementations. It would be much nicer and universally
 applicable if such a check could be done generically. It would
 probably suffice to provide an `ioctl()` call on the `pidns` file
 descriptor that reveals this kind of information in some form.
+
+### Ability to only open regular files
+
+[x] `OPENAT2_REGULAR` (inspired by the existing `O_DIRECTORY` flag for
+`open()`), which opens a file only if it is of type `S_IFREG`.
+
+**🙇 `8b82cacad92ebae9619872a5a69c570eba30140b (openat2: new OPENAT2_REGULAR flag support)` 🙇**
+
+**Use-Case:** this would be very useful to write secure programs
+that want to avoid being tricked into opening device nodes with
+special semantics while thinking they operate on regular
+files. This is particularly relevant as many device nodes (or even
+FIFOs) come with blocking I/O (or even blocking `open()`!) by
+default, which is not expected from regular files backed by "fast"
+disk I/O. Consider implementation of a naive web browser which is
+pointed to `file://dev/zero`, not expecting an endless amount of
+data to read.
